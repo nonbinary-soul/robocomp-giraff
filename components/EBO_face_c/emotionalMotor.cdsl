@@ -1,0 +1,10 @@
+import "EmotionalMotor.idsl";
+
+Component emotionalMotor
+{
+	Communications
+	{
+		implements EmotionalMotor;
+	};
+	language Cpp;
+};
