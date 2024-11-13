@@ -119,62 +119,63 @@ map<std::string, ConfigPart> DEFAULTCONFIGNEUTRAL = {
 };
 
 // Function to initialize the SDL window (equivalent to pygame in Python)
-void initWindow() {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cerr << "Error initializing SDL: " << SDL_GetError() << std::endl;
-        exit(1);
-    }
-    SDL_Window* window = SDL_CreateWindow("PIL Image Display", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, res_x, res_y, SDL_WINDOW_FULLSCREEN);
-    if (window == nullptr) {
-        std::cerr << "Error creating SDL window: " << SDL_GetError() << std::endl;
-        exit(1);
-    }
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == nullptr) {
-        std::cerr << "Error creating SDL renderer: " << SDL_GetError() << std::endl;
-        exit(1);
-    }
+void SpecificWorker::initWindow() {
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		std::cerr << "Error initializing SDL: " << SDL_GetError() << std::endl;
+		exit(1);
+	}
 
-    // Main loop
-    bool running = true;
-    SDL_Event event;
-    while (running) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-        }
+	SDL_Window* window = SDL_CreateWindow("PIL Image Display", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, res_x, res_y, SDL_WINDOW_FULLSCREEN);
+	if (window == nullptr) {
+		std::cerr << "Error creating SDL window: " << SDL_GetError() << std::endl;
+		exit(1);
+	}
 
-        // Display the image, if available
-        if (!shared_data.image.empty()) {
-            // Convert OpenCV image (BGR) to an image SDL can display
-            cv::Mat img_rgb;
-            cv::cvtColor(shared_data.image, img_rgb, cv::COLOR_BGR2RGB);
-            SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(img_rgb.data, img_rgb.cols, img_rgb.rows, 24, img_rgb.step, 0x0000FF, 0x00FF00, 0xFF0000, 0x000000);
-            SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-            SDL_RenderClear(renderer);
-            SDL_RenderCopy(renderer, texture, NULL, NULL);
-            SDL_RenderPresent(renderer);
-            SDL_DestroyTexture(texture);
-            SDL_FreeSurface(surface);
-        }
-    }
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	if (renderer == nullptr) {
+		std::cerr << "Error creating SDL renderer: " << SDL_GetError() << std::endl;
+		exit(1);
+	}
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+	// Main loop
+	bool running = true;
+	SDL_Event event;
+	while (running) {
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) {
+				running = false;
+			}
+		}
+
+		// Display the image, if available
+		std::lock_guard<std::mutex> guard(shared_data.lock); // Protect shared data with a lock
+		if (!shared_data.image.empty()) {
+			// Convert OpenCV image (BGR) to an image SDL can display
+			cv::Mat img_rgb;
+			cv::cvtColor(shared_data.image, img_rgb, cv::COLOR_BGR2RGB);
+			SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(img_rgb.data, img_rgb.cols, img_rgb.rows, 24, img_rgb.step, 0x0000FF, 0x00FF00, 0xFF0000, 0x000000);
+			SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+			SDL_RenderClear(renderer);
+			SDL_RenderCopy(renderer, texture, NULL, NULL);
+			SDL_RenderPresent(renderer);
+			SDL_DestroyTexture(texture);
+			SDL_FreeSurface(surface);
+		}
+	}
+
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 }
 
-// Calculate the Bezier point between two points
-Point bezier(const Point& p1, const Point& p2, float t) {
-    Point result;
-    result.x = p1.x + (p2.x - p1.x) * t;
-    result.y = p1.y + (p2.y - p1.y) * t;
-    return result;
+Point SpecificWorker::bezier(const Point& p1, const Point& p2, float t) {
+	Point result;
+	result.x = p1.x + (p2.x - p1.x) * t;
+	result.y = p1.y + (p2.y - p1.y) * t;
+	return result;
 }
 
-// Get points along a Bezier curve
-std::vector<Point> getPointsBezier(std::vector<Point>& points) {
+std::vector<Point> SpecificWorker::getPointsBezier(std::vector<Point>& points) {
     std::vector<Point> bezierPoints;
 
     // Preallocate the vector to avoid reallocations during the loop
@@ -198,8 +199,7 @@ std::vector<Point> getPointsBezier(std::vector<Point>& points) {
     return bezierPoints;
 }
 
-// Bezier configuration interpolation
-std::map<std::string, ConfigPart> getBezierConfig(
+std::map<std::string, ConfigPart> SpecificWorker::getBezierConfig(
     const std::map<std::string, ConfigPart>& old_config,
     const std::map<std::string, ConfigPart>& config_target,
     float t) {
@@ -221,7 +221,7 @@ std::map<std::string, ConfigPart> getBezierConfig(
         // Procesar radios (Radius1, Radius2, Radius)
         new_part.Radius1.Value = bezier({old_part.Radius1.Value, 0}, {config_target.at(parte).Radius1.Value, 0}, t).x;
         new_part.Radius2.Value = bezier({old_part.Radius2.Value, 0}, {config_target.at(parte).Radius2.Value, 0}, t).x;
-        new_part.Radius.Value = bezier({old_part.Radius.Value, 0}, {config_target.at(parte).Radius.Value, 0}, t).x;
+        new_part.Radius3.Value = bezier({old_part.Radius3.Value, 0}, {config_target.at(parte).Radius3.Value, 0}, t).x;
 
         // Asignar la parte procesada a la nueva configuración
         config[parte] = new_part;

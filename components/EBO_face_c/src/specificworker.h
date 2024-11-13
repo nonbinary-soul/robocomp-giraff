@@ -63,7 +63,7 @@ typedef struct Radius {
 // Structure representing each part of the face configuration
 typedef struct ConfigPart {
 	Point P1, P2, P3, P4, P5, P6, Center; // Points for various facial parts
-	Radius Radius1, Radius2, Radius3;      // Radii for circles like eyes and pupils
+	Radius Radius1, Radius2, Radius3;      // Radius for circles like eyes and pupils
 } ConfigPart;
 
 // Structure for shared image data
@@ -106,6 +106,7 @@ private:
 	Point createCoordinate(float x, float y);
 
 	// screen management
+	SharedData shared_data;
 	void initWindow();
 
 	// Calculate a point on a Bézier curve between two points
