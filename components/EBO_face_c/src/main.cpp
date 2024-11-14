@@ -93,7 +93,7 @@ public:
 private:
 	void initialize();
 	std::string prefix;
-	MapPrx mprx;
+	TuplePrx tprx;
 	bool startup_check_flag = false;
 
 public:
@@ -134,7 +134,8 @@ int ::emotionalMotor::run(int argc, char* argv[])
 	string proxy, tmp;
 	initialize();
 
-	SpecificWorker *worker = new SpecificWorker(mprx, startup_check_flag);
+	tprx = std::tuple<>();
+	SpecificWorker *worker = new SpecificWorker(tprx, startup_check_flag);
 	//Monitor thread
 	SpecificMonitor *monitor = new SpecificMonitor(worker,communicator());
 	QObject::connect(monitor, SIGNAL(kill()), &a, SLOT(quit()));
@@ -157,7 +158,7 @@ int ::emotionalMotor::run(int argc, char* argv[])
 				cout << "[" << PROGRAM_NAME << "]: Can't read configuration for proxy CommonBehavior\n";
 			}
 			Ice::ObjectAdapterPtr adapterCommonBehavior = communicator()->createObjectAdapterWithEndpoints("commonbehavior", tmp);
-			CommonBehaviorI *commonbehaviorI = new CommonBehaviorI(monitor);
+			auto commonbehaviorI = std::make_shared<CommonBehaviorI>(monitor);
 			adapterCommonBehavior->add(commonbehaviorI, Ice::stringToIdentity("commonbehavior"));
 			adapterCommonBehavior->activate();
 		}
@@ -180,7 +181,7 @@ int ::emotionalMotor::run(int argc, char* argv[])
 				cout << "[" << PROGRAM_NAME << "]: Can't read configuration for proxy EmotionalMotor";
 			}
 			Ice::ObjectAdapterPtr adapterEmotionalMotor = communicator()->createObjectAdapterWithEndpoints("EmotionalMotor", tmp);
-			EmotionalMotorI *emotionalmotor = new EmotionalMotorI(worker);
+			auto emotionalmotor = std::make_shared<EmotionalMotorI>(worker);
 			adapterEmotionalMotor->add(emotionalmotor, Ice::stringToIdentity("emotionalmotor"));
 			adapterEmotionalMotor->activate();
 			cout << "[" << PROGRAM_NAME << "]: EmotionalMotor adapter created in port " << tmp << endl;

@@ -68,7 +68,7 @@ class SpecificWorker : public GenericWorker
 {
 Q_OBJECT
 public:
-	SpecificWorker(MapPrx& mprx, bool startup_check);
+	SpecificWorker(TuplePrx tprx, bool startup_check);
 	~SpecificWorker();
 	bool setParams(RoboCompCommonBehavior::ParameterList params);
 
@@ -78,10 +78,10 @@ public:
 	void EmotionalMotor_expressJoy();
 	void EmotionalMotor_expressSadness();
 	void EmotionalMotor_expressSurprise();
-	void EmotionalMotor_isanybodythere(const bool &isAny);
-	void EmotionalMotor_listening(const bool &setListening);
-	void EmotionalMotor_pupposition(const float x, const float y);
-	void EmotionalMotor_talking(const bool &setTalk);
+	void EmotionalMotor_isanybodythere(bool isAny);
+	void EmotionalMotor_listening(bool setListening);
+	void EmotionalMotor_pupposition(float x, float y);
+	void EmotionalMotor_talking(bool setTalk);
 
 
 public slots:
@@ -93,9 +93,11 @@ public slots:
 private:
 	bool startup_check_flag;
 
-	//
-	int randInt(int min, int max);
+	float fact_x, fact_y, OFFSET;
+	int res_x, res_y;
+
 	Point createCoordinate(float x, float y);
+	void initializeMapDefaultConfigNeutral();
 
 	// screen management
 	SharedData shared_data;

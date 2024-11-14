@@ -8,15 +8,6 @@
 #include <opencv2/opencv.hpp>
 #include <random>
 
-// screen resolution
-extern const int res_x;
-extern const int res_y;
-extern const float fact_x;
-extern const float fact_y;
-
-
-extern const float OFFSET;
-
 // colors
 extern const cv::Scalar WHITE;
 

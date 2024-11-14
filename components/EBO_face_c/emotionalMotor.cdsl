@@ -6,5 +6,5 @@ Component emotionalMotor
 	{
 		implements EmotionalMotor;
 	};
-	language Cpp;
+	language Cpp11;
 };

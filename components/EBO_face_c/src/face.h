@@ -74,8 +74,6 @@ private:
     int val_lim_x;
     int val_lim_y;
 
-    void moveFace(bool pestaneoFlag, bool isTalking, bool isListening);
-    void drawConfig(const std::map<std::string, std::map<std::string, std::map<std::string, int>>>& configaux);
     cv::Mat rotateImage(const cv::Mat& image, double angle);
 };
 

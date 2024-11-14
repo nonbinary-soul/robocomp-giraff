@@ -16,7 +16,9 @@ Face::Face()
     config_target = config;
 }
 
-Face::~Face() {}
+Face::~Face() {
+  cout << "Destroying Face" << endl;
+}
 
 void Face::init()
 {

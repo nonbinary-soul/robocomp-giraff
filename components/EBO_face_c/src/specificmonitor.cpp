@@ -17,6 +17,7 @@
  *    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "specificmonitor.h"
+
 /**
 * \brief Default constructor
 */
@@ -86,10 +87,25 @@ bool SpecificMonitor::sendParamsToWorker(RoboCompCommonBehavior::ParameterList p
 ///We need to supply a list of accepted values to each call
 void SpecificMonitor::readConfig(RoboCompCommonBehavior::ParameterList &params )
 {
-//	RoboCompCommonBehavior::Parameter aux;
-//	aux.editable = true;
-//	configGetString( "","InnerModelPath", aux.value, "nofile");
-//	params["InnerModelPath"] = aux;
+	RoboCompCommonBehavior::Parameter aux;
+	aux.editable = true;
+
+	configGetString( "","res_x", aux.value, "");
+	params["res_x"] = aux;
+
+
+
+	configGetString( "","res_y", aux.value, "");
+	params["res_y"] = aux;
+
+	configGetString( "","fact_x", aux.value, "");
+	params["fact_x"] = aux;
+
+	configGetString( "","fact_y", aux.value, "");
+	params["fact_y"] = aux;
+
+	configGetString( "","OFFSET", aux.value, "");
+	params["OFFSET"] = aux;
 }
 
 //Check parameters and transform them to worker structure

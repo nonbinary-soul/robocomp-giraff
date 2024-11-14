@@ -20,7 +20,7 @@
 /**
 * \brief Default constructor
 */
-GenericWorker::GenericWorker(MapPrx& mprx) : QObject()
+GenericWorker::GenericWorker(TuplePrx tprx) : QObject()
 {
 
 	

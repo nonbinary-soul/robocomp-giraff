@@ -29,6 +29,9 @@ SET ( SOURCES
 )
 
 
+ADD_DEFINITIONS ("-DICE_CPP11_MAPPING")
+FIND_PACKAGE( Ice REQUIRED COMPONENTS Ice++11 IceStorm++11)
+
 
 #ROBOCOMP
 ROBOCOMP_INITIALIZE( $ENV{ROBOCOMP}/ )
@@ -37,12 +40,18 @@ ROBOCOMP_ICE_TO_SRC( CommonBehavior EmotionalMotor)
 SET (EXECUTABLE_OUTPUT_PATH ${RC_COMPONENT_DEVEL_PATH}/bin)
 
 
+# search SDL2 and OpenCV
+FIND_PACKAGE(SDL2 REQUIRED)
+FIND_PACKAGE(OpenCV REQUIRED)
+
+
+
 # no-char8_t to avoid a problem with ICE Connection lib.
 add_definitions(-fmax-errors=1 -fno-char8_t)
 
 # Specify construction and link process
 ADD_EXECUTABLE( emotionalMotor ${SOURCES} ${MOC_SOURCES} ${RC_SOURCES} ${UI_HEADERS} )
-TARGET_LINK_LIBRARIES( emotionalMotor ${LIBS} ${STATIC_LIBS} ${SPECIFIC_LIBS} ${QT_LIBRARIES} ${Ice_LIBRARIES} )
+TARGET_LINK_LIBRARIES( emotionalMotor ${LIBS} ${STATIC_LIBS} ${SPECIFIC_LIBS} ${QT_LIBRARIES} ${Ice_LIBRARIES} ${SDL2_LIBRARIES} ${OpenCV_LIBS})
 SET_TARGET_PROPERTIES(emotionalMotor
         PROPERTIES
         CXX_STANDARD 20

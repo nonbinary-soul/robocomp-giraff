@@ -19,104 +19,93 @@
 #include "specificworker.h"
 using namespace std;
 
-// Generating random integers
-int randInt(int min, int max) {
-	// Create a random device and a generator
-	std::random_device rd;  // Non-deterministic random generator
-	std::mt19937 gen(rd());  // Mersenne Twister random number generator
-
-	// Create a uniform distribution in the given range [min, max]
-	std::uniform_int_distribution<> dis(min, max);
-
-	// Generate and return a random number
-	return dis(gen);
-}
-
-Point createCoordinate(float x, float y) {
+Point SpecificWorker::createCoordinate(float x, float y) {
 	return {x * fact_x, y * fact_y};
 }
 
-map<string, ConfigPart> DEFAULTCONFIGNEUTRAL = {
-	{"rightEyebrow", {
-		.P1 = createCoordinate(278, 99),
-		.P2 = createCoordinate(314, 73),
-		.P3 = createCoordinate(355, 99),
-		.P4 = createCoordinate(313, 94)
-	}},
+void SpecificWorker::initializeMapDefaultConfigNeutral() {
+	DEFAULTCONFIGNEUTRAL = {
+		{"rightEyebrow", {
+			.P1 = createCoordinate(278, 99),
+			.P2 = createCoordinate(314, 73),
+			.P3 = createCoordinate(355, 99),
+			.P4 = createCoordinate(313, 94)
+		}},
 
-	{"leftEyebrow", {
-		.P1 = createCoordinate(122, 99),
-		.P2 = createCoordinate(160, 73),
-		.P3 = createCoordinate(201, 99),
-		.P4 = createCoordinate(160, 94)
-	}},
+		{"leftEyebrow", {
+			.P1 = createCoordinate(122, 99),
+			.P2 = createCoordinate(160, 73),
+			.P3 = createCoordinate(201, 99),
+			.P4 = createCoordinate(160, 94)
+		}},
 
-	{"rightEye", {
-		.Center = createCoordinate(316, 151),
-		.Radius1 = {34 * fact_x},
-		.Radius2 = {34 * fact_x}
-	}},
+		{"rightEye", {
+			.Center = createCoordinate(316, 151),
+			.Radius1 = {34 * fact_x},
+			.Radius2 = {34 * fact_x}
+		}},
 
-	{"leftEye", {
-		.Center = createCoordinate(161, 151),
-		.Radius1 = {34 * fact_x},
-		.Radius2 = {34 * fact_x}
-	}},
+		{"leftEye", {
+			.Center = createCoordinate(161, 151),
+			.Radius1 = {34 * fact_x},
+			.Radius2 = {34 * fact_x}
+		}},
 
-	{"mouth", {
-		.P1 = createCoordinate(170, 234),
-		.P2 = createCoordinate(239, 231),
-		.P3 = createCoordinate(309, 234),
-		.P4 = createCoordinate(309, 242),
-		.P5 = createCoordinate(239, 241),
-		.P6 = createCoordinate(170, 242)
-	}},
+		{"mouth", {
+			.P1 = createCoordinate(170, 234),
+			.P2 = createCoordinate(239, 231),
+			.P3 = createCoordinate(309, 234),
+			.P4 = createCoordinate(309, 242),
+			.P5 = createCoordinate(239, 241),
+			.P6 = createCoordinate(170, 242)
+		}},
 
-	{"rightPupil", {
-		.Center = createCoordinate(316, 151),
-		.Radius3 = {5 * fact_x}
-	}},
+		{"rightPupil", {
+			.Center = createCoordinate(316, 151),
+			.Radius3 = {5 * fact_x}
+		}},
 
-	{"leftPupil", {
-		.Center = createCoordinate(161, 151),
-		.Radius3 = {5 * fact_x}
-	}},
+		{"leftPupil", {
+			.Center = createCoordinate(161, 151),
+			.Radius3 = {5 * fact_x}
+		}},
 
-	{"tongue", {
-		.P1 = createCoordinate(199, 238),
-		.P2 = createCoordinate(239, 238),
-		.P3 = createCoordinate(309, 238),
-		.P4 = createCoordinate(273, 238)
-	}},
+		{"tongue", {
+			.P1 = createCoordinate(199, 238),
+			.P2 = createCoordinate(239, 238),
+			.P3 = createCoordinate(309, 238),
+			.P4 = createCoordinate(273, 238)
+		}},
 
-	{"rightCheek", {
-		.P1 = createCoordinate(278, 187),
-		.P2 = createCoordinate(314, 188),
-		.P3 = createCoordinate(355, 187),
-		.P4 = createCoordinate(313, 187)
-	}},
+		{"rightCheek", {
+			.P1 = createCoordinate(278, 187),
+			.P2 = createCoordinate(314, 188),
+			.P3 = createCoordinate(355, 187),
+			.P4 = createCoordinate(313, 187)
+		}},
 
-	{"leftCheek", {
-		.P1 = createCoordinate(122, 187),
-		.P2 = createCoordinate(160, 188),
-		.P3 = createCoordinate(201, 187),
-		.P4 = createCoordinate(160, 187)
-	}},
+		{"leftCheek", {
+			.P1 = createCoordinate(122, 187),
+			.P2 = createCoordinate(160, 188),
+			.P3 = createCoordinate(201, 187),
+			.P4 = createCoordinate(160, 187)
+		}},
 
-	{"rightEyelid", {
-		.P1 = createCoordinate(266, 151),
-		.P2 = createCoordinate(314, 80),
-		.P3 = createCoordinate(369, 151),
-		.P4 = createCoordinate(313, 80)
-	}},
+		{"rightEyelid", {
+			.P1 = createCoordinate(266, 151),
+			.P2 = createCoordinate(314, 80),
+			.P3 = createCoordinate(369, 151),
+			.P4 = createCoordinate(313, 80)
+		}},
 
-	{"leftEyelid", {
-		.P1 = createCoordinate(112, 151),
-		.P2 = createCoordinate(160, 80),
-		.P3 = createCoordinate(214, 151),
-		.P4 = createCoordinate(160, 80)
-	}}
-};
+		{"leftEyelid", {
+			.P1 = createCoordinate(112, 151),
+			.P2 = createCoordinate(160, 80),
+			.P3 = createCoordinate(214, 151),
+			.P4 = createCoordinate(160, 80)
+		}}
+	};
+}
 
 // Function to initialize the SDL window (equivalent to pygame in Python)
 void SpecificWorker::initWindow() {
@@ -236,7 +225,7 @@ map<string, ConfigPart> SpecificWorker::getBezierConfig(
 /**
 * \brief Default constructor
 */
-SpecificWorker::SpecificWorker(MapPrx& mprx, bool startup_check) : GenericWorker(mprx)
+SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check) : GenericWorker(tprx)
 {
 	this->startup_check_flag = startup_check;
 	// Uncomment if there's too many debug messages
@@ -255,16 +244,22 @@ SpecificWorker::~SpecificWorker()
 
 bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 {
-//	THE FOLLOWING IS JUST AN EXAMPLE
-//	To use innerModelPath parameter you should uncomment specificmonitor.cpp readConfig method content
-//	try
-//	{
-//		RoboCompCommonBehavior::Parameter par = params.at("InnerModelPath");
-//		std::string innermodel_path = par.value;
-//		innerModel = std::make_shared(innermodel_path);
-//	}
-//	catch(const std::exception &e) { qFatal("Error reading config params"); }
+	// manage the numeric locale setting, which affects how numbers are formatted
+	// in this case, it is used "." instead of ","
+	const string oldLocale=setlocale(LC_NUMERIC,nullptr);
+	setlocale(LC_NUMERIC,"C");
+
+	try
+	{
+		res_x = stoi(params["res_x"].value);
+		res_y = stoi(params["res_y"].value);
+		fact_x = stof(params["fact_x"].value);
+		fact_y = stof(params["fact_y"].value);
+		OFFSET = stof(params["OFFSET"].value);
+	}
+	catch(const std::exception &e) { qFatal("Error reading config params"); }
 	
+	setlocale(LC_NUMERIC,oldLocale.c_str());
 
 	return true;
 }
@@ -278,7 +273,6 @@ void SpecificWorker::initialize()
 	}
 	else
 	{
-
 		#ifdef HIBERNATION_ENABLED
 			hibernationChecker.start(500);
 		#endif
@@ -286,6 +280,8 @@ void SpecificWorker::initialize()
 		this->setPeriod(STATES::Compute, 100);
 		//this->setPeriod(STATES::Emergency, 500);
 
+		this->initializeMapDefaultConfigNeutral();
+		this->initWindow();
 	}
 
 }
@@ -391,7 +387,7 @@ void SpecificWorker::EmotionalMotor_expressSurprise()
 
 }
 
-void SpecificWorker::EmotionalMotor_isanybodythere(const bool &isAny)
+void SpecificWorker::EmotionalMotor_isanybodythere(bool isAny)
 {
 #ifdef HIBERNATION_ENABLED
 	hibernation = true;
@@ -400,7 +396,7 @@ void SpecificWorker::EmotionalMotor_isanybodythere(const bool &isAny)
 
 }
 
-void SpecificWorker::EmotionalMotor_listening(const bool &setListening)
+void SpecificWorker::EmotionalMotor_listening(bool setListening)
 {
 #ifdef HIBERNATION_ENABLED
 	hibernation = true;
@@ -409,7 +405,7 @@ void SpecificWorker::EmotionalMotor_listening(const bool &setListening)
 
 }
 
-void SpecificWorker::EmotionalMotor_pupposition(const float x, const float y)
+void SpecificWorker::EmotionalMotor_pupposition(float x, float y)
 {
 #ifdef HIBERNATION_ENABLED
 	hibernation = true;
@@ -418,7 +414,7 @@ void SpecificWorker::EmotionalMotor_pupposition(const float x, const float y)
 
 }
 
-void SpecificWorker::EmotionalMotor_talking(const bool &setTalk)
+void SpecificWorker::EmotionalMotor_talking(bool setTalk)
 {
 #ifdef HIBERNATION_ENABLED
 	hibernation = true;

@@ -36,14 +36,14 @@
 #define BASIC_PERIOD 100
 
 
-typedef map <string,::IceProxy::Ice::Object*> MapPrx;
+using TuplePrx = std::tuple<>;
 
 
 class GenericWorker : public QObject
 {
 Q_OBJECT
 public:
-	GenericWorker(MapPrx& mprx);
+	GenericWorker(TuplePrx tprx);
 	virtual ~GenericWorker();
 	virtual void killYourSelf();
 	virtual bool setParams(RoboCompCommonBehavior::ParameterList params) = 0;
@@ -64,10 +64,10 @@ public:
 	virtual void EmotionalMotor_expressJoy() = 0;
 	virtual void EmotionalMotor_expressSadness() = 0;
 	virtual void EmotionalMotor_expressSurprise() = 0;
-	virtual void EmotionalMotor_isanybodythere(const bool &isAny) = 0;
-	virtual void EmotionalMotor_listening(const bool &setListening) = 0;
-	virtual void EmotionalMotor_pupposition(const float x, const float y) = 0;
-	virtual void EmotionalMotor_talking(const bool &setTalk) = 0;
+	virtual void EmotionalMotor_isanybodythere(bool isAny) = 0;
+	virtual void EmotionalMotor_listening(bool setListening) = 0;
+	virtual void EmotionalMotor_pupposition(float x, float y) = 0;
+	virtual void EmotionalMotor_talking(bool setTalk) = 0;
 
 protected:
 

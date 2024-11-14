@@ -39,10 +39,10 @@ public:
 	void expressJoy(const Ice::Current&);
 	void expressSadness(const Ice::Current&);
 	void expressSurprise(const Ice::Current&);
-	void isanybodythere(const bool &isAny, const Ice::Current&);
-	void listening(const bool &setListening, const Ice::Current&);
-	void pupposition(const float x, const float y, const Ice::Current&);
-	void talking(const bool &setTalk, const Ice::Current&);
+	void isanybodythere(bool isAny, const Ice::Current&);
+	void listening(bool setListening, const Ice::Current&);
+	void pupposition(float x, float y, const Ice::Current&);
+	void talking(bool setTalk, const Ice::Current&);
 
 private:
 

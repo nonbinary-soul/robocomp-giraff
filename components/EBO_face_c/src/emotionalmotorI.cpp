@@ -59,22 +59,22 @@ void EmotionalMotorI::expressSurprise(const Ice::Current&)
 	worker->EmotionalMotor_expressSurprise();
 }
 
-void EmotionalMotorI::isanybodythere(const bool &isAny, const Ice::Current&)
+void EmotionalMotorI::isanybodythere(bool isAny, const Ice::Current&)
 {
 	worker->EmotionalMotor_isanybodythere(isAny);
 }
 
-void EmotionalMotorI::listening(const bool &setListening, const Ice::Current&)
+void EmotionalMotorI::listening(bool setListening, const Ice::Current&)
 {
 	worker->EmotionalMotor_listening(setListening);
 }
 
-void EmotionalMotorI::pupposition(const float x, const float y, const Ice::Current&)
+void EmotionalMotorI::pupposition(float x, float y, const Ice::Current&)
 {
 	worker->EmotionalMotor_pupposition(x, y);
 }
 
-void EmotionalMotorI::talking(const bool &setTalk, const Ice::Current&)
+void EmotionalMotorI::talking(bool setTalk, const Ice::Current&)
 {
 	worker->EmotionalMotor_talking(setTalk);
 }
