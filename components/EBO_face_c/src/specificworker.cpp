@@ -107,31 +107,21 @@ void SpecificWorker::initializeMapDefaultConfigNeutral() {
 	};
 }
 
-// Function to initialize the SDL window (equivalent to pygame in Python)
+// Function to initialize the SFML window (equivalent to pygame in Python)
 void SpecificWorker::initWindow() {
-	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-		std::cerr << "Error initializing SDL: " << SDL_GetError() << std::endl;
-		exit(1);
-	}
-
-	SDL_Window* window = SDL_CreateWindow("PIL Image Display", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, res_x, res_y, SDL_WINDOW_FULLSCREEN);
-	if (window == nullptr) {
-		std::cerr << "Error creating SDL window: " << SDL_GetError() << std::endl;
-		exit(1);
-	}
-
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	if (renderer == nullptr) {
-		std::cerr << "Error creating SDL renderer: " << SDL_GetError() << std::endl;
+	// Create the SFML window
+	sf::RenderWindow window(sf::VideoMode(res_x, res_y), "PIL Image Display", sf::Style::Fullscreen);
+	if (!window.isOpen()) {
+		std::cerr << "Error creating SFML window!" << std::endl;
 		exit(1);
 	}
 
 	// Main loop
 	bool running = true;
-	SDL_Event event;
+	sf::Event event;
 	while (running) {
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) {
+		while (window.pollEvent(event)) {
+			if (event.type == sf::Event::Closed) {
 				running = false;
 			}
 		}
@@ -139,22 +129,35 @@ void SpecificWorker::initWindow() {
 		// Display the image, if available
 		std::lock_guard<std::mutex> guard(shared_data.lock); // Protect shared data with a lock
 		if (!shared_data.image.empty()) {
-			// Convert OpenCV image (BGR) to an image SDL can display
+			// Convert OpenCV image (BGR) to RGB
 			cv::Mat img_rgb;
 			cv::cvtColor(shared_data.image, img_rgb, cv::COLOR_BGR2RGB);
-			SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(img_rgb.data, img_rgb.cols, img_rgb.rows, 24, img_rgb.step, 0x0000FF, 0x00FF00, 0xFF0000, 0x000000);
-			SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-			SDL_RenderClear(renderer);
-			SDL_RenderCopy(renderer, texture, NULL, NULL);
-			SDL_RenderPresent(renderer);
-			SDL_DestroyTexture(texture);
-			SDL_FreeSurface(surface);
+
+			// Create a SFML image
+			sf::Image image;
+			if (!image.create(img_rgb.cols, img_rgb.rows, img_rgb.data)) {
+				std::cerr << "Error creating image from OpenCV data!" << std::endl;
+				continue;
+			}
+
+			// Create a texture from the image
+			sf::Texture texture;
+			if (!texture.loadFromImage(image)) {
+				std::cerr << "Error loading texture from image!" << std::endl;
+				continue;
+			}
+
+			// Create a sprite to display the texture
+			sf::Sprite sprite(texture);
+
+			// Clear the window and draw the sprite
+			window.clear();
+			window.draw(sprite);
+			window.display();
 		}
 	}
 
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+	window.close();
 }
 
 Point SpecificWorker::bezier(const Point& p1, const Point& p2, float t) {

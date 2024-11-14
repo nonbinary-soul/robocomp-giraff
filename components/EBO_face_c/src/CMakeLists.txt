@@ -40,8 +40,8 @@ ROBOCOMP_ICE_TO_SRC( CommonBehavior EmotionalMotor)
 SET (EXECUTABLE_OUTPUT_PATH ${RC_COMPONENT_DEVEL_PATH}/bin)
 
 
-# search SDL2 and OpenCV
-FIND_PACKAGE(SDL2 REQUIRED)
+# search SFML and OpenCV
+FIND_PACKAGE(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
 
 
@@ -51,7 +51,7 @@ add_definitions(-fmax-errors=1 -fno-char8_t)
 
 # Specify construction and link process
 ADD_EXECUTABLE( emotionalMotor ${SOURCES} ${MOC_SOURCES} ${RC_SOURCES} ${UI_HEADERS} )
-TARGET_LINK_LIBRARIES( emotionalMotor ${LIBS} ${STATIC_LIBS} ${SPECIFIC_LIBS} ${QT_LIBRARIES} ${Ice_LIBRARIES} ${SDL2_LIBRARIES} ${OpenCV_LIBS})
+TARGET_LINK_LIBRARIES( emotionalMotor ${LIBS} ${STATIC_LIBS} ${SPECIFIC_LIBS} ${QT_LIBRARIES} ${Ice_LIBRARIES} ${OpenCV_LIBS} sfml-graphics sfml-window sfml-system)
 SET_TARGET_PROPERTIES(emotionalMotor
         PROPERTIES
         CXX_STANDARD 20

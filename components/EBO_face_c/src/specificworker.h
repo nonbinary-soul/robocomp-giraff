@@ -33,7 +33,8 @@
 #include <globals.h>
 #include <face.h>
 #include <opencv2/opencv.hpp>
-#include <SDL2/SDL.h>
+#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
 #include <map>
 #include <string>
 #include <mutex>
