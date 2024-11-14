@@ -36,7 +36,7 @@ Point createCoordinate(float x, float y) {
 	return {x * fact_x, y * fact_y};
 }
 
-map<std::string, ConfigPart> DEFAULTCONFIGNEUTRAL = {
+map<string, ConfigPart> DEFAULTCONFIGNEUTRAL = {
 	{"rightEyebrow", {
 		.P1 = createCoordinate(278, 99),
 		.P2 = createCoordinate(314, 73),
@@ -175,16 +175,16 @@ Point SpecificWorker::bezier(const Point& p1, const Point& p2, float t) {
 	return result;
 }
 
-std::vector<Point> SpecificWorker::getPointsBezier(std::vector<Point>& points) {
-    std::vector<Point> bezierPoints;
+vector<Point> SpecificWorker::getPointsBezier(vector<Point>& points) {
+    vector<Point> bezierPoints;
 
     // Preallocate the vector to avoid reallocations during the loop
     bezierPoints.reserve(51);  // We will have 51 points from t=0 to t=1 (inclusive)
 
     for (float t = 0; t <= 1.0; t += 0.02) {
-        std::vector<Point> tempPoints = points;  // Create a copy of the original points
+        vector<Point> tempPoints = points;  // Create a copy of the original points
 
-        // Perform the Bezier curve reduction in place
+        // Perform the Bézier curve reduction in place
         for (size_t k = 0; k < tempPoints.size() - 1; ++k) {
             for (size_t i = 0; i < tempPoints.size() - 1 - k; ++i) {
                 // Update points in place with Bezier calculations
@@ -192,42 +192,45 @@ std::vector<Point> SpecificWorker::getPointsBezier(std::vector<Point>& points) {
             }
         }
 
-        // Push the final point of the Bezier curve for this t value
+        // Push the final point of the Bézier curve for this t value
         bezierPoints.push_back(tempPoints[0]);
     }
 
     return bezierPoints;
 }
 
-std::map<std::string, ConfigPart> SpecificWorker::getBezierConfig(
-    const std::map<std::string, ConfigPart>& old_config,
-    const std::map<std::string, ConfigPart>& config_target,
-    float t) {
+map<string, ConfigPart> SpecificWorker::getBezierConfig(
+	const map<string, ConfigPart>& old_config,
+	const map<string, ConfigPart>& config_target,
+	float t) {
 
-    std::map<std::string, ConfigPart> config; // Mapa para almacenar la nueva configuración
+	map<string, ConfigPart> config; // Map to store the new interpolated configuration
 
-    for (const auto& [parte, old_part] : old_config) {
-        ConfigPart new_part = old_part; // Copiar la parte de configuración original
+	for (const auto& [part, old_part] : old_config) {
+		ConfigPart new_part = old_part; // Copy each configuration part
 
-        // Procesar puntos (P1, P2, ..., P6 y Center)
-        new_part.P1 = bezier(old_part.P1, config_target.at(parte).P1, t);
-        new_part.P2 = bezier(old_part.P2, config_target.at(parte).P2, t);
-        new_part.P3 = bezier(old_part.P3, config_target.at(parte).P3, t);
-        new_part.P4 = bezier(old_part.P4, config_target.at(parte).P4, t);
-        new_part.P5 = bezier(old_part.P5, config_target.at(parte).P5, t);
-        new_part.P6 = bezier(old_part.P6, config_target.at(parte).P6, t);
-        new_part.Center = bezier(old_part.Center, config_target.at(parte).Center, t);
+		// Interpolate points (P1, P2, ..., P6, and Center) using Bezier
+		new_part.P1 = bezier(old_part.P1, config_target.at(part).P1, t);
+		new_part.P2 = bezier(old_part.P2, config_target.at(part).P2, t);
+		new_part.P3 = bezier(old_part.P3, config_target.at(part).P3, t);
+		new_part.P4 = bezier(old_part.P4, config_target.at(part).P4, t);
+		new_part.P5 = bezier(old_part.P5, config_target.at(part).P5, t);
+		new_part.P6 = bezier(old_part.P6, config_target.at(part).P6, t);
+		new_part.Center = bezier(old_part.Center, config_target.at(part).Center, t);
 
-        // Procesar radios (Radius1, Radius2, Radius)
-        new_part.Radius1.Value = bezier({old_part.Radius1.Value, 0}, {config_target.at(parte).Radius1.Value, 0}, t).x;
-        new_part.Radius2.Value = bezier({old_part.Radius2.Value, 0}, {config_target.at(parte).Radius2.Value, 0}, t).x;
-        new_part.Radius3.Value = bezier({old_part.Radius3.Value, 0}, {config_target.at(parte).Radius3.Value, 0}, t).x;
+		// Interpolate radius values (Radius1, Radius2, Radius3) using Bezier
+		new_part.Radius1.Value = bezier({old_part.Radius1.Value, 0},
+										{config_target.at(part).Radius1.Value, 0}, t).x;
+		new_part.Radius2.Value = bezier({old_part.Radius2.Value, 0},
+										{config_target.at(part).Radius2.Value, 0}, t).x;
+		new_part.Radius3.Value = bezier({old_part.Radius3.Value, 0},
+										{config_target.at(part).Radius3.Value, 0}, t).x;
 
-        // Asignar la parte procesada a la nueva configuración
-        config[parte] = new_part;
-    }
+		// Store the processed part in the final configuration map
+		config[part] = new_part;
+	}
 
-    return config;
+	return config;
 }
 
 /**

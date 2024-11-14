@@ -30,23 +30,15 @@
 #define HIBERNATION_ENABLED
 
 #include <genericworker.h>
+#include <globals.h>
+#include <face.h>
 #include <opencv2/opencv.hpp>
 #include <SDL2/SDL.h>
 #include <map>
 #include <string>
 #include <mutex>
 #include <random>
-
-// Constants
-const float OFFSET = 0.06666666666666667f;
-const cv::Scalar WHITE(255, 255, 255);
-
-// Screen resolution
-const int res_x = 1280;
-const int res_y = 720;
-
-const float fact_x = static_cast<float>(res_x) / 480;
-const float fact_y = static_cast<float>(res_y) / 320;
+#include <thread>
 
 // Mutex to protect shared data
 extern std::mutex image_mutex;
