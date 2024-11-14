@@ -6,6 +6,7 @@
 #define GLOBALS_H
 
 #include <opencv2/opencv.hpp>
+#include <random>
 
 // screen resolution
 extern const int res_x;
@@ -18,5 +19,8 @@ extern const float OFFSET;
 
 // colors
 extern const cv::Scalar WHITE;
+
+// functions
+int randInt(int min, int max);
 
 #endif //GLOBALS_H
