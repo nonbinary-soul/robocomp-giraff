@@ -22,7 +22,7 @@ using namespace std;
 // Function to initialize the SFML window (equivalent to pygame in Python)
 void SpecificWorker::initWindow() {
 	// Create the SFML window
-	sf::RenderWindow window(sf::VideoMode(res_x, res_y), "PIL Image Display", sf::Style::Fullscreen);
+	sf::RenderWindow window(sf::VideoMode(res_x, res_y), "EBO FACE");
 	if (!window.isOpen()) {
 		std::cerr << "Error creating SFML window!" << std::endl;
 		exit(1);
@@ -36,8 +36,12 @@ void SpecificWorker::initWindow() {
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
 		}
 
+		// clean window
+		window.clear(sf::Color::White);
+
 		// Display the image, if available
 		std::lock_guard<std::mutex> guard(shared_data.lock); // Protect shared data with a lock
+
 		if (!shared_data.image.empty()) {
 			// Convert OpenCV image (BGR) to RGB
 			cv::Mat img_rgb;
@@ -57,11 +61,12 @@ void SpecificWorker::initWindow() {
 			// Create a sprite to display the texture
 			sf::Sprite sprite(texture);
 
-			// Clear the window and draw the sprite
-			window.clear();
+			// draw the sprite
 			window.draw(sprite);
-			window.display();
 		}
+
+		// show the window
+		window.display();
 	}
 }
 
@@ -101,7 +106,7 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 		OFFSET = stof(params["OFFSET"].value);
 	}
 	catch(const std::exception &e) { qFatal("Error reading config params"); }
-	
+
 	setlocale(LC_NUMERIC,oldLocale.c_str());
 
 	return true;
@@ -177,11 +182,7 @@ int SpecificWorker::startup_check()
 
 void SpecificWorker::EmotionalMotor_expressAnger()
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	face.setConfig(configEmotions["Anger"])
 }
 
 void SpecificWorker::EmotionalMotor_expressDisgust()

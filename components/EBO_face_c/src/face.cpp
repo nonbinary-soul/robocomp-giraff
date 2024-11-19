@@ -318,8 +318,10 @@ void Face::recordPoint() {
 }
 
 // Method to set the configuration for the face
-void Face::setConfig(const map<string, map<string, map<string, int>>>& config) {
-    this->config = config;
+void Face::setConfig(const map<string, map<string, map<string, int>>>& newConfig) {
+    config_target = newConfig;
+    old_config = config;
+    t = 0.0;
 }
 
 // Method to set whether the face is talking

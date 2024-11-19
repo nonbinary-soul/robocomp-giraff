@@ -80,12 +80,14 @@ public slots:
 	void restore() override;
 	int startup_check();
 private:
+
 	bool startup_check_flag;
 
 	// screen management
 	SharedData shared_data;
 	void initWindow();
 
+	Face face;
 };
 
 #endif
