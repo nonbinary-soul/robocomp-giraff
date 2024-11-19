@@ -19,94 +19,6 @@
 #include "specificworker.h"
 using namespace std;
 
-Point SpecificWorker::createCoordinate(float x, float y) {
-	return {x * fact_x, y * fact_y};
-}
-
-void SpecificWorker::initializeMapDefaultConfigNeutral() {
-	DEFAULTCONFIGNEUTRAL = {
-		{"rightEyebrow", {
-			.P1 = createCoordinate(278, 99),
-			.P2 = createCoordinate(314, 73),
-			.P3 = createCoordinate(355, 99),
-			.P4 = createCoordinate(313, 94)
-		}},
-
-		{"leftEyebrow", {
-			.P1 = createCoordinate(122, 99),
-			.P2 = createCoordinate(160, 73),
-			.P3 = createCoordinate(201, 99),
-			.P4 = createCoordinate(160, 94)
-		}},
-
-		{"rightEye", {
-			.Center = createCoordinate(316, 151),
-			.Radius1 = {34 * fact_x},
-			.Radius2 = {34 * fact_x}
-		}},
-
-		{"leftEye", {
-			.Center = createCoordinate(161, 151),
-			.Radius1 = {34 * fact_x},
-			.Radius2 = {34 * fact_x}
-		}},
-
-		{"mouth", {
-			.P1 = createCoordinate(170, 234),
-			.P2 = createCoordinate(239, 231),
-			.P3 = createCoordinate(309, 234),
-			.P4 = createCoordinate(309, 242),
-			.P5 = createCoordinate(239, 241),
-			.P6 = createCoordinate(170, 242)
-		}},
-
-		{"rightPupil", {
-			.Center = createCoordinate(316, 151),
-			.Radius3 = {5 * fact_x}
-		}},
-
-		{"leftPupil", {
-			.Center = createCoordinate(161, 151),
-			.Radius3 = {5 * fact_x}
-		}},
-
-		{"tongue", {
-			.P1 = createCoordinate(199, 238),
-			.P2 = createCoordinate(239, 238),
-			.P3 = createCoordinate(309, 238),
-			.P4 = createCoordinate(273, 238)
-		}},
-
-		{"rightCheek", {
-			.P1 = createCoordinate(278, 187),
-			.P2 = createCoordinate(314, 188),
-			.P3 = createCoordinate(355, 187),
-			.P4 = createCoordinate(313, 187)
-		}},
-
-		{"leftCheek", {
-			.P1 = createCoordinate(122, 187),
-			.P2 = createCoordinate(160, 188),
-			.P3 = createCoordinate(201, 187),
-			.P4 = createCoordinate(160, 187)
-		}},
-
-		{"rightEyelid", {
-			.P1 = createCoordinate(266, 151),
-			.P2 = createCoordinate(314, 80),
-			.P3 = createCoordinate(369, 151),
-			.P4 = createCoordinate(313, 80)
-		}},
-
-		{"leftEyelid", {
-			.P1 = createCoordinate(112, 151),
-			.P2 = createCoordinate(160, 80),
-			.P3 = createCoordinate(214, 151),
-			.P4 = createCoordinate(160, 80)
-		}}
-	};
-}
-
 // Function to initialize the SFML window (equivalent to pygame in Python)
 void SpecificWorker::initWindow() {
 	// Create the SFML window
@@ -116,14 +28,12 @@ void SpecificWorker::initWindow() {
 		exit(1);
 	}
 
-	// Main loop
-	bool running = true;
 	sf::Event event;
-	while (running) {
+	while (window.isOpen()) { // heck if the window is still open
+		// Poll events
 		while (window.pollEvent(event)) {
-			if (event.type == sf::Event::Closed) {
-				running = false;
-			}
+			if (event.type == sf::Event::Closed) window.close();
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
 		}
 
 		// Display the image, if available
@@ -135,10 +45,7 @@ void SpecificWorker::initWindow() {
 
 			// Create a SFML image
 			sf::Image image;
-			if (!image.create(img_rgb.cols, img_rgb.rows, img_rgb.data)) {
-				std::cerr << "Error creating image from OpenCV data!" << std::endl;
-				continue;
-			}
+			image.create(img_rgb.cols, img_rgb.rows, img_rgb.data);
 
 			// Create a texture from the image
 			sf::Texture texture;
@@ -156,73 +63,6 @@ void SpecificWorker::initWindow() {
 			window.display();
 		}
 	}
-
-	window.close();
-}
-
-Point SpecificWorker::bezier(const Point& p1, const Point& p2, float t) {
-	Point result;
-	result.x = p1.x + (p2.x - p1.x) * t;
-	result.y = p1.y + (p2.y - p1.y) * t;
-	return result;
-}
-
-vector<Point> SpecificWorker::getPointsBezier(vector<Point>& points) {
-    vector<Point> bezierPoints;
-
-    // Preallocate the vector to avoid reallocations during the loop
-    bezierPoints.reserve(51);  // We will have 51 points from t=0 to t=1 (inclusive)
-
-    for (float t = 0; t <= 1.0; t += 0.02) {
-        vector<Point> tempPoints = points;  // Create a copy of the original points
-
-        // Perform the Bézier curve reduction in place
-        for (size_t k = 0; k < tempPoints.size() - 1; ++k) {
-            for (size_t i = 0; i < tempPoints.size() - 1 - k; ++i) {
-                // Update points in place with Bezier calculations
-                tempPoints[i] = bezier(tempPoints[i], tempPoints[i + 1], t);
-            }
-        }
-
-        // Push the final point of the Bézier curve for this t value
-        bezierPoints.push_back(tempPoints[0]);
-    }
-
-    return bezierPoints;
-}
-
-map<string, ConfigPart> SpecificWorker::getBezierConfig(
-	const map<string, ConfigPart>& old_config,
-	const map<string, ConfigPart>& config_target,
-	float t) {
-
-	map<string, ConfigPart> config; // Map to store the new interpolated configuration
-
-	for (const auto& [part, old_part] : old_config) {
-		ConfigPart new_part = old_part; // Copy each configuration part
-
-		// Interpolate points (P1, P2, ..., P6, and Center) using Bezier
-		new_part.P1 = bezier(old_part.P1, config_target.at(part).P1, t);
-		new_part.P2 = bezier(old_part.P2, config_target.at(part).P2, t);
-		new_part.P3 = bezier(old_part.P3, config_target.at(part).P3, t);
-		new_part.P4 = bezier(old_part.P4, config_target.at(part).P4, t);
-		new_part.P5 = bezier(old_part.P5, config_target.at(part).P5, t);
-		new_part.P6 = bezier(old_part.P6, config_target.at(part).P6, t);
-		new_part.Center = bezier(old_part.Center, config_target.at(part).Center, t);
-
-		// Interpolate radius values (Radius1, Radius2, Radius3) using Bezier
-		new_part.Radius1.Value = bezier({old_part.Radius1.Value, 0},
-										{config_target.at(part).Radius1.Value, 0}, t).x;
-		new_part.Radius2.Value = bezier({old_part.Radius2.Value, 0},
-										{config_target.at(part).Radius2.Value, 0}, t).x;
-		new_part.Radius3.Value = bezier({old_part.Radius3.Value, 0},
-										{config_target.at(part).Radius3.Value, 0}, t).x;
-
-		// Store the processed part in the final configuration map
-		config[part] = new_part;
-	}
-
-	return config;
 }
 
 /**
@@ -283,7 +123,6 @@ void SpecificWorker::initialize()
 		this->setPeriod(STATES::Compute, 100);
 		//this->setPeriod(STATES::Emergency, 500);
 
-		this->initializeMapDefaultConfigNeutral();
 		this->initWindow();
 	}
 

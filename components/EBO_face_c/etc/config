@@ -6,8 +6,8 @@ EmotionalMotor.Endpoints=tcp -p 10945
 # screen resolution
 res_x = 1280
 res_y = 720
-fact_x = ${res_x} / 480.0
-fact_y = ${res_y} / 320.0
+fact_x = 2.66667
+fact_y = 2.25
 OFFSET = 0.06666666666666667
 
 

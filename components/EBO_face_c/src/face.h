@@ -6,6 +6,7 @@
 #define FACE_H
 
 #include <globals.h>
+#include <specificworker.h>
 #include <thread>
 #include <chrono>
 #include <random>
@@ -17,10 +18,34 @@
 
 class Face {
 public:
+    struct Point {
+        float x, y;
+    };
+
+    struct Radius {
+        float Value;
+    };
+
+    struct ConfigPart {
+        Point P1, P2, P3, P4, P5, P6, Center;
+        Radius Radius1, Radius2, Radius3;
+    };
+
     Face();
     ~Face();
-    void init();
 
+    Point createCoordinate(float x, float y);
+    // Calculate a point on a Bézier curve between two points
+    Point bezier(const Point& p1, const Point& p2, float t);
+    // Get a list of points along a Bézier curve
+    std::vector<Point> getPointsBezier(std::vector<Point>& points);
+    // Interpolate between two configurations using Bézier curve
+    std::map<std::string, ConfigPart> getBezierConfig(
+        const std::map<std::string, ConfigPart>& old_config,
+        const std::map<std::string, ConfigPart>& config_target,
+        float t);
+
+    void init();
     // Method executed when the thread starts; handles the continuous behavior of the face,
     // including blinking, talking, and other animations.
     void run();
@@ -59,9 +84,12 @@ public:
     void stop();
 
 private:
+
     cv::Mat img;
     int pup_x;
     int pup_y;
+
+    std::map<std::string, std::map<std::string, std::map<std::string, int>>> DEFAULTCONFIGNEUTRAL;
     std::map<std::string, std::map<std::string, std::map<std::string, int>>> config;
     std::map<std::string, std::map<std::string, std::map<std::string, int>>> old_config;
     double t;
@@ -69,7 +97,7 @@ private:
     bool stopped;
     bool isTalking;
     bool isListening;
-    bool pupilaFlag;
+    bool pupilFlag;
     int val_lim;
     int val_lim_x;
     int val_lim_y;

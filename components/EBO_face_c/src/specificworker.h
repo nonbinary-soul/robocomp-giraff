@@ -44,21 +44,6 @@
 // Mutex to protect shared data
 extern std::mutex image_mutex;
 
-// structures
-typedef struct Point {
-	float x, y;
-} Point;
-
-typedef struct Radius {
-	float Value;
-} Radius;
-
-// Structure representing each part of the face configuration
-typedef struct ConfigPart {
-	Point P1, P2, P3, P4, P5, P6, Center; // Points for various facial parts
-	Radius Radius1, Radius2, Radius3;      // Radius for circles like eyes and pupils
-} ConfigPart;
-
 // Structure for shared image data
 typedef struct SharedData {
 	cv::Mat image;
@@ -69,55 +54,38 @@ class SpecificWorker : public GenericWorker
 {
 Q_OBJECT
 public:
-	SpecificWorker(TuplePrx tprx, bool startup_check);
-	~SpecificWorker();
-	bool setParams(RoboCompCommonBehavior::ParameterList params);
-
-	void EmotionalMotor_expressAnger();
-	void EmotionalMotor_expressDisgust();
-	void EmotionalMotor_expressFear();
-	void EmotionalMotor_expressJoy();
-	void EmotionalMotor_expressSadness();
-	void EmotionalMotor_expressSurprise();
-	void EmotionalMotor_isanybodythere(bool isAny);
-	void EmotionalMotor_listening(bool setListening);
-	void EmotionalMotor_pupposition(float x, float y);
-	void EmotionalMotor_talking(bool setTalk);
-
-
-public slots:
-	void initialize();
-	void compute();
-	void emergency();
-	void restore();
-	int startup_check();
-private:
-	bool startup_check_flag;
 
 	float fact_x, fact_y, OFFSET;
 	int res_x, res_y;
 
-	Point createCoordinate(float x, float y);
-	void initializeMapDefaultConfigNeutral();
+	SpecificWorker(TuplePrx tprx, bool startup_check);
+	~SpecificWorker() override;
+	bool setParams(RoboCompCommonBehavior::ParameterList params) override;
+
+	void EmotionalMotor_expressAnger() override;
+	void EmotionalMotor_expressDisgust() override;
+	void EmotionalMotor_expressFear() override;
+	void EmotionalMotor_expressJoy() override;
+	void EmotionalMotor_expressSadness() override;
+	void EmotionalMotor_expressSurprise() override;
+	void EmotionalMotor_isanybodythere(bool isAny) override;
+	void EmotionalMotor_listening(bool setListening) override;
+	void EmotionalMotor_pupposition(float x, float y) override;
+	void EmotionalMotor_talking(bool setTalk) override;
+
+public slots:
+	void initialize() override;
+	void compute() override;
+	void emergency() override;
+	void restore() override;
+	int startup_check();
+private:
+	bool startup_check_flag;
 
 	// screen management
 	SharedData shared_data;
 	void initWindow();
 
-	// Calculate a point on a Bézier curve between two points
-	Point bezier(const Point& p1, const Point& p2, float t);
-
-	// Get a list of points along a Bézier curve
-	std::vector<Point> getPointsBezier(std::vector<Point>& points);
-
-	// Interpolate between two configurations using Bézier curve
-	std::map<std::string, ConfigPart> getBezierConfig(
-    const std::map<std::string, ConfigPart>& old_config,
-    const std::map<std::string, ConfigPart>& config_target,
-    float t);
-
-    // CONFIGURATION MAP
-	std::map<std::string, ConfigPart> DEFAULTCONFIGNEUTRAL;
 };
 
 #endif
