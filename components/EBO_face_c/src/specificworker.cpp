@@ -182,21 +182,21 @@ map<string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::js
 
 void SpecificWorker::initEmotionsConfig() {
 	// Define path to json directory
-	std::filesystem::path jsonPath = std::filesystem::path(__FILE__).parent_path() / "../JSON";
+	filesystem::path jsonPath = std::filesystem::path(__FILE__).parent_path() / "../JSON";
 
 	// Checks if directory exists
 	if (!exists(jsonPath) || !is_directory(jsonPath)) {
-		std::cerr << "JSON directory not found: " << jsonPath << std::endl;
+		cerr << "JSON directory not found: " << jsonPath << endl;
 		return;
 	}
 
 	// Consults all files in the directory
-	for (const auto& entry : std::filesystem::directory_iterator(jsonPath)) {
+	for (const auto& entry : filesystem::directory_iterator(jsonPath)) {
 		// Processes only json files
 		if (entry.path().extension() == ".json") {
-			std::ifstream file(entry.path());
+			ifstream file(entry.path());
 			if (!file.is_open()) {
-				std::cerr << "Error opening file: " << entry.path() << std::endl;
+				cerr << "Error opening file: " << entry.path() << endl;
 				continue;
 			}
 
@@ -204,20 +204,20 @@ void SpecificWorker::initEmotionsConfig() {
 			nlohmann::json jsonData;
 			try {
 				file >> jsonData;
-			} catch (const std::exception& e) {
-				std::cerr << "Error parsing JSON file: " << entry.path() << std::endl;
+			} catch (const exception& e) {
+				cerr << "Error parsing JSON file: " << entry.path() << endl;
 				continue;
 			}
 
 			// get key for the map
-			std::string emotionName = entry.path().stem().string();
+			string emotionName = entry.path().stem().string();
 
 			// Converts JSON to map<string, ConfigPart>
 			emotionsConfig[emotionName] = JSON2ConfigPart(jsonData);
 		}
 	}
 
-	std::cout << "Variable emotionsConfig loaded successfully!" << std::endl;
+	cout << "Variable emotionsConfig loaded successfully!" << endl;
 }
 
 void SpecificWorker::initialize()
