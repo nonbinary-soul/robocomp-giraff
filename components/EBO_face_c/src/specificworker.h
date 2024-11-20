@@ -40,6 +40,10 @@
 #include <mutex>
 #include <random>
 #include <thread>
+#include <filesystem>
+#include <nlohmann/json.hpp>
+#include <fstream>
+
 
 // Mutex to protect shared data
 extern std::mutex image_mutex;
@@ -70,8 +74,8 @@ public:
 	void EmotionalMotor_expressSurprise() override;
 	void EmotionalMotor_isanybodythere(bool isAny) override;
 	void EmotionalMotor_listening(bool setListening) override;
-	void EmotionalMotor_pupposition(float x, float y) override;
 	void EmotionalMotor_talking(bool setTalk) override;
+	void EmotionalMotor_pupposition(float x, float y) override;
 
 public slots:
 	void initialize() override;
@@ -88,6 +92,9 @@ private:
 	void initWindow();
 
 	Face face;
+	std::unordered_map<std::string, std::map<std::string, Face::ConfigPart>> emotionsConfig;
+	std::map<std::string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::json& jsonData) const;
+	void initEmotionsConfig();
 };
 
 #endif

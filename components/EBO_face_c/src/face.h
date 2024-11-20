@@ -23,15 +23,20 @@ public:
     };
 
     struct Radius {
-        float Value;
+        float value;
     };
 
     struct ConfigPart {
-        Point P1, P2, P3, P4, P5, P6, Center;
-        Radius Radius1, Radius2, Radius3;
+        Point p1, p2, p3, p4, p5, p6, center;
+        Radius r1, r2, r3;
+        ConfigPart() :
+            p1{0.0f, 0.0f}, p2{0.0f, 0.0f}, p3{0.0f, 0.0f}, p4{0.0f, 0.0f},
+            p5{0.0f, 0.0f}, p6{0.0f, 0.0f},
+            center{0.0f, 0.0f},
+            r1{0.0f}, r2{0.0f}, r3{0.0f} {}
     };
 
-    Face();
+    Face(int res_x, int res_y, float fact_x, float fact_y);
     ~Face();
 
     Point createCoordinate(float x, float y);
@@ -73,34 +78,42 @@ public:
     void recordPoint();
 
     // Set the configuration of the face
-    void setConfig(const std::map<std::string, std::map<std::string, std::map<std::string, int>>>& config);
+    void setConfig(std::map<std::string, ConfigPart> _config);
 
     // Set whether the face is talking
-    void setTalking(bool talking);
+    void setTalking(bool _talking);
     // Set whether the face is listening
-    void setListening(bool listening);
+    void setListening(bool _listening);
+    void setPupilFlag(bool _pupilFlag);
+    void setPupX(bool _pup_x);
+    void setPupY(bool _pup_y);
 
     // Stop the face thread
     void stop();
 
 private:
+    std::map<std::string, ConfigPart> DEFAULTCONFIGNEUTRAL;
+    std::map<std::string, ConfigPart> config;
+    std::map<std::string, ConfigPart> old_config;
+    std::map<std::string, ConfigPart> config_target;
 
     cv::Mat img;
-    int pup_x;
-    int pup_y;
 
-    std::map<std::string, std::map<std::string, std::map<std::string, int>>> DEFAULTCONFIGNEUTRAL;
-    std::map<std::string, std::map<std::string, std::map<std::string, int>>> config;
-    std::map<std::string, std::map<std::string, std::map<std::string, int>>> old_config;
     double t;
-    std::map<std::string, std::map<std::string, std::map<std::string, int>>> config_target;
     bool stopped;
+
     bool isTalking;
     bool isListening;
     bool pupilFlag;
+    int pup_x;
+    int pup_y;
+
     int val_lim;
     int val_lim_x;
     int val_lim_y;
+
+    int res_x, res_y;
+    float fact_x, fact_y;
 
     cv::Mat rotateImage(const cv::Mat& image, double angle);
 };

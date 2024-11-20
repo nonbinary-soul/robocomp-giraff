@@ -73,14 +73,17 @@ void SpecificWorker::initWindow() {
 /**
 * \brief Default constructor
 */
-SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check) : GenericWorker(tprx)
+SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
+	: GenericWorker(tprx), face(res_x, res_y, fact_x, fact_y)
 {
 	this->startup_check_flag = startup_check;
+
 	// Uncomment if there's too many debug messages
 	// but it removes the possibility to see the messages
 	// shown in the console with qDebug()
-//	QLoggingCategory::setFilterRules("*.debug=false\n");
+	//    QLoggingCategory::setFilterRules("*.debug=false\n");
 }
+
 
 /**
 * \brief Default destructor
@@ -112,6 +115,111 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 	return true;
 }
 
+// TODO: emplear punteros si es posible
+map<string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::json& jsonData) const {
+	map<string, Face::ConfigPart> configParts;
+
+	for (auto& [partName, partData] : jsonData.items()) {
+		Face::ConfigPart configPart;
+
+		// radius
+		if (partData.contains("r1") && partData["r1"].contains("value")) {
+			configPart.r1.value = partData["r1"]["value"].get<float>() * fact_x;
+		}
+
+		if (partData.contains("r2") && partData["r2"].contains("value")) {
+			configPart.r2.value = partData["r2"]["value"].get<float>() * fact_x;
+		}
+
+		if (partData.contains("r3") && partData["r3"].contains("value")) {
+			configPart.r3.value = partData["r3"]["value"].get<float>() * fact_x;
+		}
+
+		// centers
+		if (partData.contains("center") && partData["center"].contains("x") && partData["center"].contains("y")) {
+			configPart.center.x = partData["center"]["x"].get<float>() * fact_x;
+			configPart.center.y = partData["center"]["y"].get<float>() * fact_y;
+		}
+
+		// points
+		if (partData.contains("p1") && partData["p1"].contains("x") && partData["p1"].contains("y")) {
+			configPart.p1.x = partData["p1"]["x"].get<float>() * fact_x;
+			configPart.p1.y = partData["p1"]["y"].get<float>() * fact_y;
+		}
+
+		if (partData.contains("p2") && partData["p2"].contains("x") && partData["p2"].contains("y")) {
+			configPart.p2.x = partData["p2"]["x"].get<float>() * fact_x;
+			configPart.p2.y = partData["p2"]["y"].get<float>() * fact_y;
+		}
+
+		if (partData.contains("p3") && partData["p3"].contains("x") && partData["p3"].contains("y")) {
+			configPart.p3.x = partData["p3"]["x"].get<float>() * fact_x;
+			configPart.p3.y = partData["p3"]["y"].get<float>() * fact_y;
+		}
+
+		if (partData.contains("p4") && partData["p4"].contains("x") && partData["p4"].contains("y")) {
+			configPart.p4.x = partData["p4"]["x"].get<float>() * fact_x;
+			configPart.p4.y = partData["p4"]["y"].get<float>() * fact_y;
+		}
+
+		if (partData.contains("p5") && partData["p5"].contains("x") && partData["p5"].contains("y")) {
+			configPart.p5.x = partData["p5"]["x"].get<float>() * fact_x;
+			configPart.p5.y = partData["p5"]["y"].get<float>() * fact_y;
+		}
+
+		if (partData.contains("p6") && partData["p6"].contains("x") && partData["p6"].contains("y")) {
+			configPart.p6.x = partData["p6"]["x"].get<float>() * fact_x;
+			configPart.p6.y = partData["p6"]["y"].get<float>() * fact_y;
+		}
+
+		// associating the configuration to the correct face part
+		configParts[partName] = configPart;
+	}
+
+	// returning the configuration for an emotion
+	return configParts;
+}
+
+void SpecificWorker::initEmotionsConfig() {
+	// Define path to json directory
+	std::filesystem::path jsonPath = std::filesystem::path(__FILE__).parent_path() / "../JSON";
+
+	// Checks if directory exists
+	if (!exists(jsonPath) || !is_directory(jsonPath)) {
+		std::cerr << "JSON directory not found: " << jsonPath << std::endl;
+		return;
+	}
+
+	// Consults all files in the directory
+	for (const auto& entry : std::filesystem::directory_iterator(jsonPath)) {
+		// Processes only json files
+		if (entry.path().extension() == ".json") {
+			std::ifstream file(entry.path());
+			if (!file.is_open()) {
+				std::cerr << "Error opening file: " << entry.path() << std::endl;
+				continue;
+			}
+
+			// parses file to json
+			nlohmann::json jsonData;
+			try {
+				file >> jsonData;
+			} catch (const std::exception& e) {
+				std::cerr << "Error parsing JSON file: " << entry.path() << std::endl;
+				continue;
+			}
+
+			// get key for the map
+			std::string emotionName = entry.path().stem().string();
+
+			// Converts JSON to map<string, ConfigPart>
+			emotionsConfig[emotionName] = JSON2ConfigPart(jsonData);
+		}
+	}
+
+	std::cout << "Variable emotionsConfig loaded successfully!" << std::endl;
+}
+
 void SpecificWorker::initialize()
 {
 	std::cout << "Initialize worker" << std::endl;
@@ -128,6 +236,7 @@ void SpecificWorker::initialize()
 		this->setPeriod(STATES::Compute, 100);
 		//this->setPeriod(STATES::Emergency, 500);
 
+		this->initEmotionsConfig();
 		this->initWindow();
 	}
 
@@ -182,89 +291,80 @@ int SpecificWorker::startup_check()
 
 void SpecificWorker::EmotionalMotor_expressAnger()
 {
-	face.setConfig(configEmotions["Anger"])
+	if (emotionsConfig.contains("anger")) {
+		face.setConfig(emotionsConfig["anger"]);
+	} else {
+		std::cerr << "Anger emotion not found!" << std::endl;
+	}
 }
 
 void SpecificWorker::EmotionalMotor_expressDisgust()
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	if (emotionsConfig.contains("disgust")) {
+		face.setConfig(emotionsConfig["disgust"]);
+	} else {
+		std::cerr << "Disgust emotion not found!" << std::endl;
+	}
 }
 
 void SpecificWorker::EmotionalMotor_expressFear()
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	if (emotionsConfig.contains("fear")) {
+		face.setConfig(emotionsConfig["fear"]);
+	} else {
+		std::cerr << "Fear emotion not found!" << std::endl;
+	}
 }
 
 void SpecificWorker::EmotionalMotor_expressJoy()
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	if (emotionsConfig.contains("joy")) {
+		face.setConfig(emotionsConfig["joy"]);
+	} else {
+		std::cerr << "Joy emotion not found!" << std::endl;
+	}
 }
 
 void SpecificWorker::EmotionalMotor_expressSadness()
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	if (emotionsConfig.contains("sadness")) {
+		face.setConfig(emotionsConfig["sadness"]);
+	} else {
+		std::cerr << "Sadness emotion not found!" << std::endl;
+	}
 }
 
 void SpecificWorker::EmotionalMotor_expressSurprise()
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	if (emotionsConfig.contains("surprise")) {
+		face.setConfig(emotionsConfig["surprise"]);
+	} else {
+		std::cerr << "Surprise emotion not found!" << std::endl;
+	}
 }
 
 void SpecificWorker::EmotionalMotor_isanybodythere(bool isAny)
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	cout << (isAny ? (face.setPupilFlag(true), "active") : (face.setPupilFlag(false), "inactive")) << endl;
 }
 
 void SpecificWorker::EmotionalMotor_listening(bool setListening)
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
-}
-
-void SpecificWorker::EmotionalMotor_pupposition(float x, float y)
-{
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	face.setListening(setListening);
 }
 
 void SpecificWorker::EmotionalMotor_talking(bool setTalk)
 {
-#ifdef HIBERNATION_ENABLED
-	hibernation = true;
-#endif
-//implementCODE
-
+	face.setTalking(setTalk);
 }
+
+void SpecificWorker::EmotionalMotor_pupposition(float x, float y)
+{
+	face.setPupX(x);
+	face.setPupY(y);
+}
+
+
 
 
 

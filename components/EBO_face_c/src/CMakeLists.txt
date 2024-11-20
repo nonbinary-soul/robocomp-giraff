@@ -40,18 +40,32 @@ ROBOCOMP_ICE_TO_SRC( CommonBehavior EmotionalMotor)
 SET (EXECUTABLE_OUTPUT_PATH ${RC_COMPONENT_DEVEL_PATH}/bin)
 
 
-# search SFML and OpenCV
+# libraries that will be used in this project
 FIND_PACKAGE(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(nlohmann_json 3.10.0 REQUIRED)
 
 
 
 # no-char8_t to avoid a problem with ICE Connection lib.
 add_definitions(-fmax-errors=1 -fno-char8_t)
 
+set(SFML_LIBS
+        sfml-graphics
+        sfml-window
+        sfml-system
+)
+
 # Specify construction and link process
 ADD_EXECUTABLE( emotionalMotor ${SOURCES} ${MOC_SOURCES} ${RC_SOURCES} ${UI_HEADERS} )
-TARGET_LINK_LIBRARIES( emotionalMotor ${LIBS} ${STATIC_LIBS} ${SPECIFIC_LIBS} ${QT_LIBRARIES} ${Ice_LIBRARIES} ${OpenCV_LIBS} sfml-graphics sfml-window sfml-system)
+TARGET_LINK_LIBRARIES( emotionalMotor
+        ${LIBS} ${STATIC_LIBS}
+        ${SPECIFIC_LIBS} ${QT_LIBRARIES}
+        ${Ice_LIBRARIES}
+        ${OpenCV_LIBS} ${SFML_LIBS}
+        nlohmann_json::nlohmann_json
+)
+
 SET_TARGET_PROPERTIES(emotionalMotor
         PROPERTIES
         CXX_STANDARD 20

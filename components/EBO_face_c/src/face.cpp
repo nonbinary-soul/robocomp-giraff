@@ -6,91 +6,81 @@
 
 using namespace std;
 
-Face::Face()
-    : pup_x(0), pup_y(0), t(0.9), stopped(false), isTalking(false),
-      isListening(false), pupilFlag(false), val_lim(10 * fact_x),
-      val_lim_x(20 * fact_x), val_lim_y(20 * fact_y)
+Face::Face(int res_x, int res_y, float fact_x, float fact_y)
+    : t(0.9), stopped(false), isTalking(false), isListening(false),
+      pupilFlag(false), pup_x(0),
+      pup_y(0), val_lim(10 * fact_x), val_lim_x(20 * fact_x), val_lim_y(20 * fact_y), res_x(res_x),
+      res_y(res_y), fact_x(fact_x), fact_y(fact_y)
 {
-  	DEFAULTCONFIGNEUTRAL = {
-		{"rightEyebrow", {
-			.P1 = createCoordinate(278, 99),
-			.P2 = createCoordinate(314, 73),
-			.P3 = createCoordinate(355, 99),
-			.P4 = createCoordinate(313, 94)
-		}},
-
-		{"leftEyebrow", {
-			.P1 = createCoordinate(122, 99),
-			.P2 = createCoordinate(160, 73),
-			.P3 = createCoordinate(201, 99),
-			.P4 = createCoordinate(160, 94)
-		}},
-
-		{"rightEye", {
-			.Center = createCoordinate(316, 151),
-			.Radius1 = {34 * fact_x},
-			.Radius2 = {34 * fact_x}
-		}},
-
-		{"leftEye", {
-			.Center = createCoordinate(161, 151),
-			.Radius1 = {34 * fact_x},
-			.Radius2 = {34 * fact_x}
-		}},
-
-		{"mouth", {
-			.P1 = createCoordinate(170, 234),
-			.P2 = createCoordinate(239, 231),
-			.P3 = createCoordinate(309, 234),
-			.P4 = createCoordinate(309, 242),
-			.P5 = createCoordinate(239, 241),
-			.P6 = createCoordinate(170, 242)
-		}},
-
-		{"rightPupil", {
-			.Center = createCoordinate(316, 151),
-			.Radius3 = {5 * fact_x}
-		}},
-
-		{"leftPupil", {
-			.Center = createCoordinate(161, 151),
-			.Radius3 = {5 * fact_x}
-		}},
-
-		{"tongue", {
-			.P1 = createCoordinate(199, 238),
-			.P2 = createCoordinate(239, 238),
-			.P3 = createCoordinate(309, 238),
-			.P4 = createCoordinate(273, 238)
-		}},
-
-		{"rightCheek", {
-			.P1 = createCoordinate(278, 187),
-			.P2 = createCoordinate(314, 188),
-			.P3 = createCoordinate(355, 187),
-			.P4 = createCoordinate(313, 187)
-		}},
-
-		{"leftCheek", {
-			.P1 = createCoordinate(122, 187),
-			.P2 = createCoordinate(160, 188),
-			.P3 = createCoordinate(201, 187),
-			.P4 = createCoordinate(160, 187)
-		}},
-
-		{"rightEyelid", {
-			.P1 = createCoordinate(266, 151),
-			.P2 = createCoordinate(314, 80),
-			.P3 = createCoordinate(369, 151),
-			.P4 = createCoordinate(313, 80)
-		}},
-
-		{"leftEyelid", {
-			.P1 = createCoordinate(112, 151),
-			.P2 = createCoordinate(160, 80),
-			.P3 = createCoordinate(214, 151),
-			.P4 = createCoordinate(160, 80)
-		}}
+	DEFAULTCONFIGNEUTRAL = {
+    	{"rightEyebrow", ConfigPart{
+        	.p1 = createCoordinate(278, 99),
+        	.p2 = createCoordinate(314, 73),
+        	.p3 = createCoordinate(355, 99),
+        	.p4 = createCoordinate(313, 94)
+    	}},
+    	{"leftEyebrow", ConfigPart{
+        	.p1 = createCoordinate(122, 99),
+        	.p2 = createCoordinate(160, 73),
+        	.p3 = createCoordinate(201, 99),
+        	.p4 = createCoordinate(160, 94)
+    	}},
+    	{"rightEye", ConfigPart{
+	        .center = createCoordinate(316, 151),
+	        .r1 = {.value = 34 * fact_x},
+	        .r2 = {.value = 34 * fact_x}
+	    }},
+	    {"leftEye", ConfigPart{
+	        .center = createCoordinate(161, 151),
+	        .r1 = {.value = 34 * fact_x},
+    	    .r2 = {.value = 34 * fact_x}
+    	}},
+    	{"mouth", ConfigPart{
+	        .p1 = createCoordinate(170, 234),
+    	    .p2 = createCoordinate(239, 231),
+	        .p3 = createCoordinate(309, 234),
+	        .p4 = createCoordinate(309, 242),
+		    .p5 = createCoordinate(239, 241),
+    	    .p6 = createCoordinate(170, 242)
+    	}},
+		{"rightPupil", ConfigPart{
+        	.center = createCoordinate(316, 151),
+        	.r3 = {.value = 5 * fact_x}
+    	}},
+    	{"leftPupil", ConfigPart{
+	        .center = createCoordinate(161, 151),
+	        .r3 = {.value = 5 * fact_x}
+	    }},
+	    {"tongue", ConfigPart{
+	        .p1 = createCoordinate(199, 238),
+	        .p2 = createCoordinate(239, 238),
+	        .p3 = createCoordinate(309, 238),
+	        .p4 = createCoordinate(273, 238)
+	    }},
+	    {"rightCheek", ConfigPart{
+	        .p1 = createCoordinate(278, 187),
+	        .p2 = createCoordinate(314, 188),
+	        .p3 = createCoordinate(355, 187),
+	        .p4 = createCoordinate(313, 187)
+	    }},
+    	{"leftCheek", ConfigPart{
+	        .p1 = createCoordinate(122, 187),
+        	.p2 = createCoordinate(160, 188),
+        	.p3 = createCoordinate(201, 187),
+	        .p4 = createCoordinate(160, 187)
+	    }},
+		{"rightEyelid", ConfigPart{
+    	    .p1 = createCoordinate(266, 151),
+        	.p2 = createCoordinate(314, 80),
+        	.p3 = createCoordinate(369, 151),
+        	.p4 = createCoordinate(313, 80)
+    	}},
+    	{"leftEyelid", ConfigPart{
+       		.p1 = createCoordinate(112, 151),
+        	.p2 = createCoordinate(160, 80),
+        	.p3 = createCoordinate(214, 151),
+        	.p4 = createCoordinate(160, 80)
+    	}}
 	};
 
     img = cv::Mat::zeros(res_y, res_x, CV_8UC3);
@@ -138,38 +128,49 @@ vector<Face::Point> Face::getPointsBezier(vector<Point>& points) {
     return bezierPoints;
 }
 
+float interpolate(float start, float end, float t) {
+    return start + (end - start) * t;
+}
+
 map<string, Face::ConfigPart> Face::getBezierConfig(
-	const map<string, ConfigPart>& oldConfig,
-	const map<string, ConfigPart>& configTarget,
-	float interpolationFactor) {
+    const map<string, ConfigPart>& oldConfig,
+    const map<string, ConfigPart>& configTarget,
+    float interpolationFactor) {
 
-	map<string, ConfigPart> interpolatedConfig; // Map to store the new interpolated configuration
+    map<string, ConfigPart> interpolatedConfig;
 
-	for (const auto& [part, old_part] : oldConfig) {
-		ConfigPart new_part = old_part; // Copy each configuration part
+    for (const auto& [part, old_part] : oldConfig) {
+        auto it = configTarget.find(part);
+        if (it == configTarget.end()) {
+            throw std::runtime_error("Part not found in configTarget: " + part);
+        }
+        const ConfigPart& target_part = it->second;
 
-		// Interpolate points (P1, P2, ..., P6, and Center) using Bezier
-		new_part.P1 = bezier(old_part.P1, configTarget.at(part).P1, t);
-		new_part.P2 = bezier(old_part.P2, configTarget.at(part).P2, t);
-		new_part.P3 = bezier(old_part.P3, configTarget.at(part).P3, t);
-		new_part.P4 = bezier(old_part.P4, configTarget.at(part).P4, t);
-		new_part.P5 = bezier(old_part.P5, configTarget.at(part).P5, t);
-		new_part.P6 = bezier(old_part.P6, configTarget.at(part).P6, t);
-		new_part.Center = bezier(old_part.Center, configTarget.at(part).Center, t);
+        ConfigPart new_part = old_part;
 
-		// Interpolate radius values (Radius1, Radius2, Radius3) using Bezier
-		new_part.Radius1.Value = bezier({old_part.Radius1.Value, 0},
-										{configTarget.at(part).Radius1.Value, 0}, t).x;
-		new_part.Radius2.Value = bezier({old_part.Radius2.Value, 0},
-										{configTarget.at(part).Radius2.Value, 0}, t).x;
-		new_part.Radius3.Value = bezier({old_part.Radius3.Value, 0},
-										{configTarget.at(part).Radius3.Value, 0}, t).x;
+        // points interpolation
+        new_part.p1 = bezier(old_part.p1, target_part.p1, interpolationFactor);
+        new_part.p2 = bezier(old_part.p2, target_part.p2, interpolationFactor);
+        new_part.p3 = bezier(old_part.p3, target_part.p3, interpolationFactor);
+        new_part.p4 = bezier(old_part.p4, target_part.p4, interpolationFactor);
+        if (old_part.p5.x || old_part.p5.y) {
+            new_part.p5 = bezier(old_part.p5, target_part.p5, interpolationFactor);
+        }
+        if (old_part.p6.x || old_part.p6.y) {
+            new_part.p6 = bezier(old_part.p6, target_part.p6, interpolationFactor);
+        }
 
-		// Store the processed part in the final configuration map
-		interpolatedConfig[part] = new_part;
-	}
+        new_part.center = bezier(old_part.center, target_part.center, interpolationFactor);
 
-	return interpolatedConfig;
+        // radius interpolation
+        new_part.r1.value = interpolate(old_part.r1.value, target_part.r1.value, interpolationFactor);
+        new_part.r2.value = interpolate(old_part.r2.value, target_part.r2.value, interpolationFactor);
+        new_part.r3.value = interpolate(old_part.r3.value, target_part.r3.value, interpolationFactor);
+
+        interpolatedConfig[part] = new_part;
+    }
+
+    return interpolatedConfig;
 }
 
 void Face::init()
@@ -318,20 +319,32 @@ void Face::recordPoint() {
 }
 
 // Method to set the configuration for the face
-void Face::setConfig(const map<string, map<string, map<string, int>>>& newConfig) {
-    config_target = newConfig;
+void Face::setConfig(const map<string, ConfigPart> _config) {
+    config_target = _config;
     old_config = config;
-    t = 0.0;
+    t = 0.06666666666666667;
 }
 
 // Method to set whether the face is talking
-void Face::setTalking(bool talking) {
-    isTalking = talking;
+void Face::setTalking(bool _talking) {
+    isTalking = _talking;
 }
 
 // Method to set whether the face is listening
-void Face::setListening(bool listening) {
-    isListening = listening;
+void Face::setListening(bool _listening) {
+    isListening = _listening;
+}
+
+void Face::setPupilFlag(bool _pupilFlag) {
+    pupilFlag = _pupilFlag;
+}
+
+void Face::setPupX(bool _pup_x) {
+    pupilFlag = _pup_x;
+}
+
+void Face::setPupY(bool _pup_y) {
+    pup_x = _pup_y;
 }
 
 // Method to stop the face thread

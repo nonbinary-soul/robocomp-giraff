@@ -93,8 +93,6 @@ void SpecificMonitor::readConfig(RoboCompCommonBehavior::ParameterList &params )
 	configGetString( "","res_x", aux.value, "");
 	params["res_x"] = aux;
 
-
-
 	configGetString( "","res_y", aux.value, "");
 	params["res_y"] = aux;
 
