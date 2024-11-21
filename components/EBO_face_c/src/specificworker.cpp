@@ -20,15 +20,15 @@
 using namespace std;
 
 // Function to initialize the SFML window (equivalent to pygame in Python)
-void SpecificWorker::initWindow() {
+void SpecificWorker::initWindow() const {
 	// Create the SFML window
 	sf::RenderWindow window(sf::VideoMode(res_x, res_y), "EBO FACE");
 	if (!window.isOpen()) {
-		std::cerr << "Error creating SFML window!" << std::endl;
+		cerr << "Error creating SFML window!" << endl;
 		exit(1);
 	}
 
-	sf::Event event;
+	sf::Event event = sf::Event();
 	while (window.isOpen()) { // heck if the window is still open
 		// Poll events
 		while (window.pollEvent(event)) {
@@ -40,7 +40,7 @@ void SpecificWorker::initWindow() {
 		window.clear(sf::Color::White);
 
 		// Display the image, if available
-		std::lock_guard<std::mutex> guard(shared_data.lock); // Protect shared data with a lock
+		lock_guard guard(shared_data.lock); // Protect shared data with a lock
 
 		if (!shared_data.image.empty()) {
 			// Convert OpenCV image (BGR) to RGB
@@ -54,7 +54,7 @@ void SpecificWorker::initWindow() {
 			// Create a texture from the image
 			sf::Texture texture;
 			if (!texture.loadFromImage(image)) {
-				std::cerr << "Error loading texture from image!" << std::endl;
+				cerr << "Error loading texture from image!" << endl;
 				continue;
 			}
 
@@ -74,7 +74,7 @@ void SpecificWorker::initWindow() {
 * \brief Default constructor
 */
 SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
-	: GenericWorker(tprx), face(res_x, res_y, fact_x, fact_y)
+	: GenericWorker(tprx), face(res_x, res_y, fact_x, fact_y, OFFSET)
 {
 	this->startup_check_flag = startup_check;
 
@@ -83,7 +83,6 @@ SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
 	// shown in the console with qDebug()
 	//    QLoggingCategory::setFilterRules("*.debug=false\n");
 }
-
 
 /**
 * \brief Default destructor
@@ -120,7 +119,16 @@ map<string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::js
 	map<string, Face::ConfigPart> configParts;
 
 	for (auto& [partName, partData] : jsonData.items()) {
-		Face::ConfigPart configPart;
+		Face::ConfigPart configPart = {
+			{0.0f, 0.0f},
+			{0.0f, 0.0f},
+			{0.0f, 0.0f},
+			{0.0f, 0.0f},
+			{0.0f, 0.0f},
+			{0.0f, 0.0f},
+			{0.0f, 0.0f},
+			0.0f, 0.0f, 0.0f
+		};
 
 		// radius
 		if (partData.contains("r1") && partData["r1"].contains("value")) {
@@ -180,6 +188,30 @@ map<string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::js
 	return configParts;
 }
 
+void debugEmotionsConfig(std::unordered_map<std::string, std::map<std::string, Face::ConfigPart>> map) {
+	if (map.empty()) {
+		cout << "The emotionsConfig map is empty." << endl;
+		return;
+	}
+
+	for (const auto& [emotionName, configParts] : map) {
+		cout << "Emotion: " << emotionName << endl;
+		for (const auto& [partName, configPart] : configParts) {
+			cout << "  Part: " << partName << endl;
+			cout << "    p1: (" << configPart.p1.x << ", " << configPart.p1.y << ")" << endl;
+			cout << "    p2: (" << configPart.p2.x << ", " << configPart.p2.y << ")" << endl;
+			cout << "    p3: (" << configPart.p3.x << ", " << configPart.p3.y << ")" << endl;
+			cout << "    p4: (" << configPart.p4.x << ", " << configPart.p4.y << ")" << endl;
+			cout << "    p5: (" << configPart.p5.x << ", " << configPart.p5.y << ")" << endl;
+			cout << "    p6: (" << configPart.p6.x << ", " << configPart.p6.y << ")" << endl;
+			cout << "    Center: (" << configPart.center.x << ", " << configPart.center.y << ")" << endl;
+			cout << "    Radius r1: " << configPart.r1.value << endl;
+			cout << "    Radius r2: " << configPart.r2.value << endl;
+			cout << "    Radius r3: " << configPart.r3.value << endl;
+		}
+	}
+}
+
 void SpecificWorker::initEmotionsConfig() {
 	// Define path to json directory
 	filesystem::path jsonPath = std::filesystem::path(__FILE__).parent_path() / "../JSON";
@@ -214,6 +246,9 @@ void SpecificWorker::initEmotionsConfig() {
 
 			// Converts JSON to map<string, ConfigPart>
 			emotionsConfig[emotionName] = JSON2ConfigPart(jsonData);
+
+			// checking if the emotion has been added to the main map
+			debugEmotionsConfig(emotionsConfig);
 		}
 	}
 

@@ -26,6 +26,8 @@ SET ( SOURCES
   commonbehaviorI.cpp
   genericworker.cpp
   emotionalmotorI.cpp
+  face.cpp
+  globals.cpp
 )
 
 

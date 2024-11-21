@@ -6,11 +6,11 @@
 
 using namespace std;
 
-Face::Face(int res_x, int res_y, float fact_x, float fact_y)
+Face::Face(int res_x, int res_y, float fact_x, float fact_y, float OFFSET)
     : t(0.9), stopped(false), isTalking(false), isListening(false),
       pupilFlag(false), pup_x(0),
       pup_y(0), val_lim(10 * fact_x), val_lim_x(20 * fact_x), val_lim_y(20 * fact_y), res_x(res_x),
-      res_y(res_y), fact_x(fact_x), fact_y(fact_y)
+      res_y(res_y), fact_x(fact_x), fact_y(fact_y), OFFSET(OFFSET)
 {
 	DEFAULTCONFIGNEUTRAL = {
     	{"rightEyebrow", ConfigPart{
@@ -222,44 +222,7 @@ void Face::run()
 
 // Method to move the pupil
 void Face::movePupil() {
-    // Create a copy of the current configuration
-    auto configAux = config;
 
-    // Initial pupil values (base coordinates)
-    float leftPupilX = 161 * fact_x;
-    float leftPupilY = 151 * fact_y;
-    float rightPupilX = 316 * fact_x;
-    float rightPupilY = 151 * fact_y;
-
-    // Update the center position of the left and right pupils
-    configAux["leftPupil"]["Center"]["x"] = leftPupilX + val_lim * pup_x;
-    configAux["leftPupil"]["Center"]["y"] = leftPupilY + val_lim * pup_y;
-    configAux["rightPupil"]["Center"]["x"] = rightPupilX + val_lim * pup_x;
-    configAux["rightPupil"]["Center"]["y"] = rightPupilY + val_lim * pup_y;
-
-    // Draw the updated configuration of the face with the moved pupils
-    drawConfig(configAux);
-
-    // Rotate the face image by 270 degrees
-    cv::Mat rotatedImage;
-    cv::rotate(img, rotatedImage, cv::ROTATE_90_CLOCKWISE);
-
-    // Crop a specific region of the image
-    cv::Rect area(280, 0, 1000 - 280, res_y - 1);
-    cv::Mat croppedImage = rotatedImage(area);
-
-    // If a background exists, combine the cropped image with it
-    croppedImage.copyTo(background(cv::Rect(300, 0, croppedImage.cols, croppedImage.rows)));
-
-    // Save the final image as "EBO_face.png"
-    cv::imwrite("EBO_face.png", background);
-
-    // Send the image to a framebuffer, if necessary (system-specific code)
-    std::ofstream fb("/dev/fb0", std::ios::binary);
-    if (fb.is_open()) {
-        fb.write(reinterpret_cast<char*>(background.data), background.total() * background.elemSize());
-        fb.close();
-    }
 }
 
 // Method to move the face (e.g., blinking, mouth movement)
@@ -268,49 +231,267 @@ void Face::moveFace(bool blinkFlag, bool isTalking, bool isListening) {
 }
 
 // Method to draw the face configuration
-void Face::drawConfig(const map<string, map<string, map<string, int>>>& configAux) {
-    // Logic to draw the current configuration
+void Face::drawConfig(const map<string, Face::ConfigPart>& configAux) {
+    sf::RenderWindow window(sf::VideoMode(res_x, res_y), "Face");
+    window.clear(sf::Color::White);
+
+    sf::RectangleShape rect(sf::Vector2f(res_x - 1, res_y - 1));
+    rect.setFillColor(sf::Color::White);
+    rect.setOutlineColor(sf::Color::Black);
+    rect.setOutlineThickness(1);
+    rect.setPosition(0, 0);
+
+    renderEyebrow(config.at("rightEyebrow"), window);
+    renderEyebrow(config.at("leftEyebrow"), window);
+
+    renderEye(config.at("rightEye"), window);
+    renderEye(config.at("leftEye"), window);
+
+    renderMouth(config.at("mouth"), window);
+
+    renderPupil(config.at("rightPupil"), window);
+    renderPupil(config.at("leftPupil"), window);
+
+    renderTongue(config.at("tongue"), window);
+
+    renderCheek(config.at("rightCheek"), window);
+    renderCheek(config.at("leftCheek"), window);
+
+    renderEyelid(config.at("rightEyelid"), window);
+    renderEyelid(config.at("leftEyelid"), window);
+
+    window.draw(rect);
+    window.display();
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+    }
 }
 
 // Method to render the face image
+// Method to render the face image
 cv::Mat Face::render() {
-    // Logic to render the face and return the image
+    // Check if animation is in progress (t <= 1.0) and if the target configuration is not empty
+    if (t <= 1.0f && !config_target.empty()) {
+        // Generate a new configuration using Bezier interpolation between the old and target configurations
+        config = getBezierConfig(old_config, config_target, t);
+
+        cout << "Animating step " << t << " - Interpolating configuration." << endl;
+
+        // Draw the current configuration on the image (img)
+        drawConfig(config);
+
+        // Increment t by OFFSET, effectively progressing the animation step-by-step
+        t += OFFSET;
+
+        // Show the rendered image in a window called "Rendered Image"
+        cv::imshow("Rendered Image", img);
+
+        // Lock the mutex to safely update the shared image data across threads
+        lock_guard<mutex> lock(shared_data.lock);
+        shared_data.image = img; // Update the global shared image with the current frame
+    } else {
+        // If animation is complete, update the old and target configurations
+        old_config = config_target;
+        config_target = {}; // Reset target configuration
+
+        cout << "Animation complete. Updating configuration." << endl;
+    }
+
+    // Return the rendered image (img)
     return img;
 }
 
-// Method to render the pupil (e.g., based on certain points)
-void Face::renderPupil(const vector<cv::Point>& points) {
-    // Logic to render the pupil
-}
+// Method to render the eyebrow
+void Face::renderEyebrow(const ConfigPart& eyebrow, sf::RenderWindow& window) {
+    // Create a vector of points for the eyebrow
+    vector<Face::Point> eyebrowPoints = {eyebrow.p1, eyebrow.p2, eyebrow.p3, eyebrow.p4};
 
-// Method to render the tongue
-void Face::renderTongue(const vector<cv::Point>& points) {
-    // Logic to render the tongue
+    // Get the Bézier points for the eyebrow
+    vector<sf::Vector2f> bezierPoints;
+    vector<Face::Point> points = getPointsBezier(eyebrowPoints);
+
+    // Convert the Face::Point points to sf::Vector2f
+    for (const auto& point : points) {
+        bezierPoints.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Create a VertexArray to represent the eyebrow
+    sf::VertexArray eyebrowShape(sf::LinesStrip, bezierPoints.size());
+
+    for (size_t i = 0; i < bezierPoints.size(); ++i) {
+        eyebrowShape[i].position = bezierPoints[i];
+        eyebrowShape[i].color = sf::Color::Black;
+    }
+
+    // Draw the eyebrow on the window
+    window.draw(eyebrowShape);
 }
 
 // Method to render the eyelid
-void Face::renderEyelid(const vector<cv::Point>& points) {
-    // Logic to render the eyelid
+void Face::renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window) {
+    // Define eyelid points from the ConfigPart object using Face::Point structure.
+    vector<Face::Point> eyelidPoints = {eyelid.p1, eyelid.p2, eyelid.p3, eyelid.p4};
+
+    // Get interpolated points using Bézier curve for both the upper and lower parts of the eyelid.
+    vector<sf::Vector2f> bezierUpper;
+    vector<Face::Point> upperPoints = getPointsBezier(eyelidPoints);  // Upper part of eyelid
+
+    // Convert the Face::Point to sf::Vector2f for rendering.
+    for (const auto& point : upperPoints) {
+        bezierUpper.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Create a vector for the lower part of the eyelid.
+    vector<Face::Point> lowerPoints = {eyelid.p3, eyelid.p4, eyelid.p1};  // Lower part of eyelid
+    vector<Face::Point> lowerBezierPoints = getPointsBezier(lowerPoints);  // Get interpolated points for lower part
+
+    // Convert the Face::Point to sf::Vector2f for rendering.
+    vector<sf::Vector2f> bezierLower;
+    for (const auto& point : lowerBezierPoints) {
+        bezierLower.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Combine the upper and lower parts of the eyelid.
+    vector<sf::Vector2f> eyelidBezierPoints = bezierUpper;
+    eyelidBezierPoints.insert(eyelidBezierPoints.end(), bezierLower.begin(), bezierLower.end());
+
+    // Create a VertexArray to represent the eyelid as a triangle fan.
+    sf::VertexArray eyelidShape(sf::TrianglesFan, eyelidBezierPoints.size());
+
+    // Assign points and color to the vertex array.
+    for (size_t i = 0; i < eyelidBezierPoints.size(); ++i) {
+        eyelidShape[i].position = eyelidBezierPoints[i];
+        eyelidShape[i].color = sf::Color(255, 255, 255);
+    }
+
+    // Draw the eyelid shape on the window.
+    window.draw(eyelidShape);
 }
 
-// Method to render the cheek
-void Face::renderCheek(const vector<cv::Point>& points) {
-    // Logic to render the cheek
-}
+// Method to render the pupil (e.g., based on certain points)
+void Face::renderPupil(const ConfigPart& pupil, sf::RenderWindow& window) {
+    // Create a CircleShape to render the pupil, using the radius (r3) from the pupil config
+    sf::CircleShape pupilShape(pupil.r3.value);
 
-// Method to render the eyebrow
-void Face::renderEyebrow(const vector<cv::Point>& points) {
-    // Logic to render the eyebrow
+    pupilShape.setFillColor(sf::Color::Black);
+
+    // Set the position of the pupil based on the center coordinates, adjusting for the radius
+    pupilShape.setPosition(pupil.center.x - pupil.r3.value, pupil.center.y - pupil.r3.value);
+
+    // Draw the pupil on the window
+    window.draw(pupilShape);
 }
 
 // Method to render the eye
-void Face::renderEye(const vector<cv::Point>& points) {
-    // Logic to render the eye
+void Face::renderEye(const ConfigPart& eye, sf::RenderWindow& window) {
+    sf::CircleShape eyeShape(eye.r1.value);  // Create the base circle with the radius on the X axis
+    eyeShape.setFillColor(sf::Color::White);
+    eyeShape.setOutlineColor(sf::Color::Black);
+    eyeShape.setOutlineThickness(2);
+
+    // Scale the Y axis to convert the circle into an ellipse
+    eyeShape.setScale(1.f, eye.r2.value / eye.r1.value);
+
+    // Position the center of the ellipse
+    eyeShape.setPosition(eye.center.x - eye.r1.value, eye.center.y - eye.r2.value);
+
+    window.draw(eyeShape);
+}
+
+// Method to render the cheek
+void Face::renderCheek(const ConfigPart& cheek, sf::RenderWindow& window) {
+    // Define the points for the cheek from the ConfigPart object.
+    vector<Face::Point> cheekPoints1 = {cheek.p1, cheek.p2, cheek.p3};
+    vector<Face::Point> cheekPoints2 = {cheek.p3, cheek.p4, cheek.p1};
+
+    // Get interpolated points for both Bézier curves.
+    vector<sf::Vector2f> bezierPoints1, bezierPoints2;
+
+    // Interpolate the first curve (P1 -> P2 -> P3).
+    vector<Face::Point> points1 = getPointsBezier(cheekPoints1);
+    for (const auto& point : points1) {
+        bezierPoints1.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Interpolate the second curve (P3 -> P4 -> P1).
+    vector<Face::Point> points2 = getPointsBezier(cheekPoints2);
+    for (const auto& point : points2) {
+        bezierPoints2.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Combine both sets of Bézier points.
+    bezierPoints1.insert(bezierPoints1.end(), bezierPoints2.begin(), bezierPoints2.end());
+
+    // Create a vertex array to represent the cheek shape.
+    sf::VertexArray cheekShape(sf::TrianglesFan, bezierPoints1.size());
+
+    // Assign points to the vertex array and set the color (white for the cheek).
+    for (size_t i = 0; i < bezierPoints1.size(); ++i) {
+        cheekShape[i].position = bezierPoints1[i];
+        cheekShape[i].color = sf::Color(255, 255, 255);
+    }
+
+    // Draw the cheek shape onto the window.
+    window.draw(cheekShape);
 }
 
 // Method to render the mouth
-void Face::renderMouth(const vector<cv::Point>& points) {
-    // Logic to render the mouth
+void Face::renderMouth(const ConfigPart& mouth, sf::RenderWindow& window) {
+    // Define mouth points from ConfigPart.
+    vector<Face::Point> mouthPoints = {mouth.p1, mouth.p2, mouth.p3, mouth.p4, mouth.p5, mouth.p6};
+
+    // Get interpolated points using Bézier curve.
+    vector<sf::Vector2f> bezierPoints;
+    vector<Face::Point> points = getPointsBezier(mouthPoints);
+
+    // Convert custom points to sf::Vector2f for rendering.
+    for (const auto& point : points) {
+        bezierPoints.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Create a VertexArray to represent the mouth as a triangle fan.
+    sf::VertexArray mouthShape(sf::TrianglesFan, bezierPoints.size());
+
+    // Assign points to VertexArray and set color.
+    for (size_t i = 0; i < bezierPoints.size(); ++i) {
+        mouthShape[i].position = bezierPoints[i];
+        mouthShape[i].color = sf::Color::Black;
+    }
+
+    // Draw the mouth on the window.
+    window.draw(mouthShape);
+}
+
+// Method to render the tongue
+void Face::renderTongue(const ConfigPart& tongue, sf::RenderWindow& window) {
+    // Define the tongue points from the ConfigPart.
+    vector<Face::Point> tonguePoints = {tongue.p1, tongue.p2, tongue.p3, tongue.p4};
+
+    // Get interpolated points using Bézier curve.
+    vector<sf::Vector2f> bezierPoints;
+    vector<Face::Point> points = getPointsBezier(tonguePoints);
+
+    // Convert custom Face::Point to sf::Vector2f for rendering.
+    for (const auto& point : points) {
+        bezierPoints.push_back(sf::Vector2f(point.x, point.y));
+    }
+
+    // Create a vertex array for the tongue shape.
+    sf::VertexArray tongueShape(sf::TrianglesFan, bezierPoints.size());
+
+    // Assign points and colors to the vertex array.
+    for (size_t i = 0; i < bezierPoints.size(); ++i) {
+        tongueShape[i].position = bezierPoints[i];
+        tongueShape[i].color = sf::Color(131, 131, 255);
+    }
+
+    // Draw the tongue shape onto the window.
+    window.draw(tongueShape);
 }
 
 // Method to record a point (e.g., for tracking purposes)

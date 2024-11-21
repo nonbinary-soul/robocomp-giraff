@@ -44,16 +44,6 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
-
-// Mutex to protect shared data
-extern std::mutex image_mutex;
-
-// Structure for shared image data
-typedef struct SharedData {
-	cv::Mat image;
-	std::mutex lock;
-} SharedData;
-
 class SpecificWorker : public GenericWorker
 {
 Q_OBJECT
@@ -88,12 +78,11 @@ private:
 	bool startup_check_flag;
 
 	// screen management
-	SharedData shared_data;
-	void initWindow();
+	void initWindow() const;
 
 	Face face;
 	std::unordered_map<std::string, std::map<std::string, Face::ConfigPart>> emotionsConfig;
-	std::map<std::string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::json& jsonData) const;
+	std::map<std::string, Face::ConfigPart> JSON2ConfigPart(const nlohmann::json& jsonData) const;
 	void initEmotionsConfig();
 };
 

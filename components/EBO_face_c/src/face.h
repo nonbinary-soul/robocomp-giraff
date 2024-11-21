@@ -6,15 +6,16 @@
 #define FACE_H
 
 #include <globals.h>
-#include <specificworker.h>
 #include <thread>
 #include <chrono>
 #include <random>
 #include <iostream>
 #include <string>
 #include <map>
+#include <specificworker.h>
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include <SFML/Graphics.hpp>
 
 class Face {
 public:
@@ -29,14 +30,9 @@ public:
     struct ConfigPart {
         Point p1, p2, p3, p4, p5, p6, center;
         Radius r1, r2, r3;
-        ConfigPart() :
-            p1{0.0f, 0.0f}, p2{0.0f, 0.0f}, p3{0.0f, 0.0f}, p4{0.0f, 0.0f},
-            p5{0.0f, 0.0f}, p6{0.0f, 0.0f},
-            center{0.0f, 0.0f},
-            r1{0.0f}, r2{0.0f}, r3{0.0f} {}
     };
 
-    Face(int res_x, int res_y, float fact_x, float fact_y);
+    Face(int res_x, int res_y, float fact_x, float fact_y, float OFFSET);
     ~Face();
 
     Point createCoordinate(float x, float y);
@@ -60,19 +56,19 @@ public:
     void moveFace(bool blinkFlag, bool isTalking, bool isListening);
 
     // Method to draw the current configuration of the face
-    void drawConfig(const std::map<std::string, std::map<std::string, std::map<std::string, int>>>& configAux);
+    void drawConfig(const std::map<std::string, Face::ConfigPart>& configAux);
 
     // Render the whole face
     cv::Mat render();
 
     // Rendering functions for different parts of the face
-    void renderPupil(const std::vector<cv::Point>& points);
-    void renderTongue(const std::vector<cv::Point>& points);
-    void renderEyelid(const std::vector<cv::Point>& points);
-    void renderCheek(const std::vector<cv::Point>& points);
-    void renderEyebrow(const std::vector<cv::Point>& points);
-    void renderEye(const std::vector<cv::Point>& points);
-    void renderMouth(const std::vector<cv::Point>& points);
+    void renderEyebrow(const ConfigPart& eyebrow, sf::RenderWindow& window);
+    void renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window);
+    void renderPupil(const ConfigPart& pupil, sf::RenderWindow& window);
+    void renderEye(const ConfigPart& eye, sf::RenderWindow& window);
+    void renderCheek(const ConfigPart& cheek, sf::RenderWindow& window);
+    void renderMouth(const ConfigPart& mouth, sf::RenderWindow& window);
+    void renderTongue(const ConfigPart& tongue, sf::RenderWindow& window);
 
     // Method to record a point (used for tracking)
     void recordPoint();
@@ -114,6 +110,7 @@ private:
 
     int res_x, res_y;
     float fact_x, fact_y;
+    float OFFSET;
 
     cv::Mat rotateImage(const cv::Mat& image, double angle);
 };
