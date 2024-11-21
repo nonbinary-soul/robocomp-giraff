@@ -115,11 +115,11 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 }
 
 // TODO: emplear punteros si es posible
-map<string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::json& jsonData) const {
-	map<string, Face::ConfigPart> configParts;
+map<string, Face::FacialGeometry> SpecificWorker::JSON2ConfigPart(const nlohmann::json& jsonData) const {
+	map<string, Face::FacialGeometry> configParts;
 
 	for (auto& [partName, partData] : jsonData.items()) {
-		Face::ConfigPart configPart = {
+		Face::FacialGeometry configPart = {
 			{0.0f, 0.0f},
 			{0.0f, 0.0f},
 			{0.0f, 0.0f},
@@ -188,7 +188,7 @@ map<string, Face::ConfigPart> SpecificWorker::JSON2ConfigPart(const nlohmann::js
 	return configParts;
 }
 
-void debugEmotionsConfig(std::unordered_map<std::string, std::map<std::string, Face::ConfigPart>> map) {
+void debugEmotionsConfig(std::unordered_map<std::string, std::map<std::string, Face::FacialGeometry>> map) {
 	if (map.empty()) {
 		cout << "The emotionsConfig map is empty." << endl;
 		return;
@@ -244,7 +244,7 @@ void SpecificWorker::initEmotionsConfig() {
 			// get key for the map
 			string emotionName = entry.path().stem().string();
 
-			// Converts JSON to map<string, ConfigPart>
+			// Converts JSON to map<string, FacialGeometry>
 			emotionsConfig[emotionName] = JSON2ConfigPart(jsonData);
 
 			// checking if the emotion has been added to the main map

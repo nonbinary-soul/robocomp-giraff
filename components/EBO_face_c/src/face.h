@@ -27,7 +27,7 @@ public:
         float value;
     };
 
-    struct ConfigPart {
+    struct FacialGeometry {
         Point p1, p2, p3, p4, p5, p6, center;
         Radius r1, r2, r3;
     };
@@ -41,9 +41,9 @@ public:
     // Get a list of points along a Bézier curve
     std::vector<Point> getPointsBezier(std::vector<Point>& points);
     // Interpolate between two configurations using Bézier curve
-    std::map<std::string, ConfigPart> getBezierConfig(
-        const std::map<std::string, ConfigPart>& old_config,
-        const std::map<std::string, ConfigPart>& config_target,
+    std::map<std::string, FacialGeometry> getBezierConfig(
+        const std::map<std::string, FacialGeometry>& old_config,
+        const std::map<std::string, FacialGeometry>& config_target,
         float t);
 
     void init();
@@ -56,25 +56,25 @@ public:
     void moveFace(bool blinkFlag, bool isTalking, bool isListening);
 
     // Method to draw the current configuration of the face
-    void drawConfig(const std::map<std::string, Face::ConfigPart>& configAux);
+    void drawConfig(const std::map<std::string, FacialGeometry>& configAux);
 
     // Render the whole face
     cv::Mat render();
 
     // Rendering functions for different parts of the face
-    void renderEyebrow(const ConfigPart& eyebrow, sf::RenderWindow& window);
-    void renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window);
-    void renderPupil(const ConfigPart& pupil, sf::RenderWindow& window);
-    void renderEye(const ConfigPart& eye, sf::RenderWindow& window);
-    void renderCheek(const ConfigPart& cheek, sf::RenderWindow& window);
-    void renderMouth(const ConfigPart& mouth, sf::RenderWindow& window);
-    void renderTongue(const ConfigPart& tongue, sf::RenderWindow& window);
+    void renderEyebrow(const FacialGeometry& eyebrow, sf::RenderWindow& window);
+    void renderEyelid(const FacialGeometry& eyelid, sf::RenderWindow& window);
+    void renderPupil(const FacialGeometry& pupil, sf::RenderWindow& window);
+    void renderEye(const FacialGeometry& eye, sf::RenderWindow& window);
+    void renderCheek(const FacialGeometry& cheek, sf::RenderWindow& window);
+    void renderMouth(const FacialGeometry& mouth, sf::RenderWindow& window);
+    void renderTongue(const FacialGeometry& tongue, sf::RenderWindow& window);
 
     // Method to record a point (used for tracking)
     void recordPoint();
 
     // Set the configuration of the face
-    void setConfig(std::map<std::string, ConfigPart> _config);
+    void setConfig(std::map<std::string, FacialGeometry> _config);
 
     // Set whether the face is talking
     void setTalking(bool _talking);
@@ -88,10 +88,10 @@ public:
     void stop();
 
 private:
-    std::map<std::string, ConfigPart> DEFAULTCONFIGNEUTRAL;
-    std::map<std::string, ConfigPart> config;
-    std::map<std::string, ConfigPart> old_config;
-    std::map<std::string, ConfigPart> config_target;
+    std::map<std::string, FacialGeometry> DEFAULTCONFIGNEUTRAL;
+    std::map<std::string, FacialGeometry> config;
+    std::map<std::string, FacialGeometry> old_config;
+    std::map<std::string, FacialGeometry> config_target;
 
     cv::Mat img;
 

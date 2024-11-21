@@ -81,8 +81,8 @@ private:
 	void initWindow() const;
 
 	Face face;
-	std::unordered_map<std::string, std::map<std::string, Face::ConfigPart>> emotionsConfig;
-	std::map<std::string, Face::ConfigPart> JSON2ConfigPart(const nlohmann::json& jsonData) const;
+	std::unordered_map<std::string, std::map<std::string, Face::FacialGeometry>> emotionsConfig;
+	std::map<std::string, Face::FacialGeometry> JSON2ConfigPart(const nlohmann::json& jsonData) const;
 	void initEmotionsConfig();
 };
 
