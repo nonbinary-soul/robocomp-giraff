@@ -1,7 +1,3 @@
-//
-// Created by lee on 11/14/24.
-//
-
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
@@ -9,17 +5,27 @@
 #include <random>
 #include <specificworker.h>
 
-// colors
-extern const cv::Scalar WHITE;
+class Globals {
+public:
+    // variables
+    static const int res_x;
+    static const int res_y;
+    static const float fact_x;
+    static const float fact_y;
+    static const float OFFSET;
 
-// functions
-int randInt(int min, int max);
+    // colors
+    static const cv::Scalar WHITE;
 
-// Structure for shared image data
-typedef struct SharedData {
-    cv::Mat image;
-    std::mutex lock;
-} SharedData;
+    // functions
+    static int randInt(int min, int max);
 
-extern  SharedData shared_data;
+    typedef struct SharedData {
+        cv::Mat image;
+        std::mutex lock;
+    } SharedData;
+
+    static SharedData shared_data;
+};
+
 #endif //GLOBALS_H

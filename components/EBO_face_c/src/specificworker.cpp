@@ -17,14 +17,13 @@
  *    along with RoboComp.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "specificworker.h"
-using namespace std;
 
 // Function to initialize the SFML window (equivalent to pygame in Python)
-void SpecificWorker::initWindow() const {
+void SpecificWorker::initWindow() {
 	// Create the SFML window
-	sf::RenderWindow window(sf::VideoMode(res_x, res_y), "EBO FACE");
+	sf::RenderWindow window(sf::VideoMode(Globals::res_x, Globals::res_y), "EBO FACE");
 	if (!window.isOpen()) {
-		cerr << "Error creating SFML window!" << endl;
+		std::cerr << "Error creating SFML window!" << std::endl;
 		exit(1);
 	}
 
@@ -40,7 +39,7 @@ void SpecificWorker::initWindow() const {
 		window.clear(sf::Color::White);
 
 		// Display the image, if available
-		lock_guard guard(shared_data.lock); // Protect shared data with a lock
+		std::lock_guard<std::mutex> guard(shared_data.lock); // Protect shared data with a lock
 
 		if (!shared_data.image.empty()) {
 			// Convert OpenCV image (BGR) to RGB
@@ -54,7 +53,7 @@ void SpecificWorker::initWindow() const {
 			// Create a texture from the image
 			sf::Texture texture;
 			if (!texture.loadFromImage(image)) {
-				cerr << "Error loading texture from image!" << endl;
+				std::cerr << "Error loading texture from image!" << std::endl;
 				continue;
 			}
 
@@ -74,7 +73,7 @@ void SpecificWorker::initWindow() const {
 * \brief Default constructor
 */
 SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
-	: GenericWorker(tprx), face(res_x, res_y, fact_x, fact_y, OFFSET)
+	: GenericWorker(tprx)
 {
 	this->startup_check_flag = startup_check;
 
@@ -96,163 +95,22 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 {
 	// manage the numeric locale setting, which affects how numbers are formatted
 	// in this case, it is used "." instead of ","
-	const string oldLocale=setlocale(LC_NUMERIC,nullptr);
-	setlocale(LC_NUMERIC,"C");
+	const std::string oldLocale = setlocale(LC_NUMERIC, nullptr);
+	setlocale(LC_NUMERIC, "C");
 
 	try
 	{
-		res_x = stoi(params["res_x"].value);
-		res_y = stoi(params["res_y"].value);
-		fact_x = stof(params["fact_x"].value);
-		fact_y = stof(params["fact_y"].value);
-		OFFSET = stof(params["OFFSET"].value);
+		// res_x = std::stoi(params["res_x"].value);
+		// res_y = std::stoi(params["res_y"].value);
+		// fact_x = std::stof(params["fact_x"].value);
+		// fact_y = std::stof(params["fact_y"].value);
+		// OFFSET = std::stof(params["OFFSET"].value);
 	}
-	catch(const std::exception &e) { qFatal("Error reading config params"); }
+	catch (const std::exception &e) { qFatal("Error reading config params"); }
 
-	setlocale(LC_NUMERIC,oldLocale.c_str());
+	setlocale(LC_NUMERIC, oldLocale.c_str());
 
 	return true;
-}
-
-// TODO: emplear punteros si es posible
-map<string, Face::FacialGeometry> SpecificWorker::JSON2ConfigPart(const nlohmann::json& jsonData) const {
-	map<string, Face::FacialGeometry> configParts;
-
-	for (auto& [partName, partData] : jsonData.items()) {
-		Face::FacialGeometry configPart = {
-			{0.0f, 0.0f},
-			{0.0f, 0.0f},
-			{0.0f, 0.0f},
-			{0.0f, 0.0f},
-			{0.0f, 0.0f},
-			{0.0f, 0.0f},
-			{0.0f, 0.0f},
-			0.0f, 0.0f, 0.0f
-		};
-
-		// radius
-		if (partData.contains("r1") && partData["r1"].contains("value")) {
-			configPart.r1.value = partData["r1"]["value"].get<float>() * fact_x;
-		}
-
-		if (partData.contains("r2") && partData["r2"].contains("value")) {
-			configPart.r2.value = partData["r2"]["value"].get<float>() * fact_x;
-		}
-
-		if (partData.contains("r3") && partData["r3"].contains("value")) {
-			configPart.r3.value = partData["r3"]["value"].get<float>() * fact_x;
-		}
-
-		// centers
-		if (partData.contains("center") && partData["center"].contains("x") && partData["center"].contains("y")) {
-			configPart.center.x = partData["center"]["x"].get<float>() * fact_x;
-			configPart.center.y = partData["center"]["y"].get<float>() * fact_y;
-		}
-
-		// points
-		if (partData.contains("p1") && partData["p1"].contains("x") && partData["p1"].contains("y")) {
-			configPart.p1.x = partData["p1"]["x"].get<float>() * fact_x;
-			configPart.p1.y = partData["p1"]["y"].get<float>() * fact_y;
-		}
-
-		if (partData.contains("p2") && partData["p2"].contains("x") && partData["p2"].contains("y")) {
-			configPart.p2.x = partData["p2"]["x"].get<float>() * fact_x;
-			configPart.p2.y = partData["p2"]["y"].get<float>() * fact_y;
-		}
-
-		if (partData.contains("p3") && partData["p3"].contains("x") && partData["p3"].contains("y")) {
-			configPart.p3.x = partData["p3"]["x"].get<float>() * fact_x;
-			configPart.p3.y = partData["p3"]["y"].get<float>() * fact_y;
-		}
-
-		if (partData.contains("p4") && partData["p4"].contains("x") && partData["p4"].contains("y")) {
-			configPart.p4.x = partData["p4"]["x"].get<float>() * fact_x;
-			configPart.p4.y = partData["p4"]["y"].get<float>() * fact_y;
-		}
-
-		if (partData.contains("p5") && partData["p5"].contains("x") && partData["p5"].contains("y")) {
-			configPart.p5.x = partData["p5"]["x"].get<float>() * fact_x;
-			configPart.p5.y = partData["p5"]["y"].get<float>() * fact_y;
-		}
-
-		if (partData.contains("p6") && partData["p6"].contains("x") && partData["p6"].contains("y")) {
-			configPart.p6.x = partData["p6"]["x"].get<float>() * fact_x;
-			configPart.p6.y = partData["p6"]["y"].get<float>() * fact_y;
-		}
-
-		// associating the configuration to the correct face part
-		configParts[partName] = configPart;
-	}
-
-	// returning the configuration for an emotion
-	return configParts;
-}
-
-void debugEmotionsConfig(std::unordered_map<std::string, std::map<std::string, Face::FacialGeometry>> map) {
-	if (map.empty()) {
-		cout << "The emotionsConfig map is empty." << endl;
-		return;
-	}
-
-	for (const auto& [emotionName, configParts] : map) {
-		cout << "Emotion: " << emotionName << endl;
-		for (const auto& [partName, configPart] : configParts) {
-			cout << "  Part: " << partName << endl;
-			cout << "    p1: (" << configPart.p1.x << ", " << configPart.p1.y << ")" << endl;
-			cout << "    p2: (" << configPart.p2.x << ", " << configPart.p2.y << ")" << endl;
-			cout << "    p3: (" << configPart.p3.x << ", " << configPart.p3.y << ")" << endl;
-			cout << "    p4: (" << configPart.p4.x << ", " << configPart.p4.y << ")" << endl;
-			cout << "    p5: (" << configPart.p5.x << ", " << configPart.p5.y << ")" << endl;
-			cout << "    p6: (" << configPart.p6.x << ", " << configPart.p6.y << ")" << endl;
-			cout << "    Center: (" << configPart.center.x << ", " << configPart.center.y << ")" << endl;
-			cout << "    Radius r1: " << configPart.r1.value << endl;
-			cout << "    Radius r2: " << configPart.r2.value << endl;
-			cout << "    Radius r3: " << configPart.r3.value << endl;
-		}
-	}
-}
-
-void SpecificWorker::initEmotionsConfig() {
-	// Define path to json directory
-	filesystem::path jsonPath = std::filesystem::path(__FILE__).parent_path() / "../JSON";
-
-	// Checks if directory exists
-	if (!exists(jsonPath) || !is_directory(jsonPath)) {
-		cerr << "JSON directory not found: " << jsonPath << endl;
-		return;
-	}
-
-	// Consults all files in the directory
-	for (const auto& entry : filesystem::directory_iterator(jsonPath)) {
-		// Processes only json files
-		if (entry.path().extension() == ".json") {
-			ifstream file(entry.path());
-			if (!file.is_open()) {
-				cerr << "Error opening file: " << entry.path() << endl;
-				continue;
-			}
-
-			// parses file to json
-			nlohmann::json jsonData;
-			try {
-				file >> jsonData;
-			} catch (const exception& e) {
-				cerr << "Error parsing JSON file: " << entry.path() << endl;
-				continue;
-			}
-
-			// get key for the map
-			string emotionName = entry.path().stem().string();
-
-			// Converts JSON to map<string, FacialGeometry>
-			emotionsConfig[emotionName] = JSON2ConfigPart(jsonData);
-
-			// checking if the emotion has been added to the main map
-			debugEmotionsConfig(emotionsConfig);
-		}
-	}
-
-	cout << "Variable emotionsConfig loaded successfully!" << endl;
 }
 
 void SpecificWorker::initialize()
@@ -271,7 +129,6 @@ void SpecificWorker::initialize()
 		this->setPeriod(STATES::Compute, 100);
 		//this->setPeriod(STATES::Emergency, 500);
 
-		this->initEmotionsConfig();
 		this->initWindow();
 	}
 
@@ -326,8 +183,8 @@ int SpecificWorker::startup_check()
 
 void SpecificWorker::EmotionalMotor_expressAnger()
 {
-	if (emotionsConfig.contains("anger")) {
-		face.setConfig(emotionsConfig["anger"]);
+	if (Face::emotionsConfig.contains("anger")) {
+		face.setConfig(Face::emotionsConfig["anger"]);
 	} else {
 		std::cerr << "Anger emotion not found!" << std::endl;
 	}
@@ -335,8 +192,8 @@ void SpecificWorker::EmotionalMotor_expressAnger()
 
 void SpecificWorker::EmotionalMotor_expressDisgust()
 {
-	if (emotionsConfig.contains("disgust")) {
-		face.setConfig(emotionsConfig["disgust"]);
+	if (Face::emotionsConfig.contains("disgust")) {
+		face.setConfig(Face::emotionsConfig["disgust"]);
 	} else {
 		std::cerr << "Disgust emotion not found!" << std::endl;
 	}
@@ -344,8 +201,8 @@ void SpecificWorker::EmotionalMotor_expressDisgust()
 
 void SpecificWorker::EmotionalMotor_expressFear()
 {
-	if (emotionsConfig.contains("fear")) {
-		face.setConfig(emotionsConfig["fear"]);
+	if (Face::emotionsConfig.contains("fear")) {
+		face.setConfig(Face::emotionsConfig["fear"]);
 	} else {
 		std::cerr << "Fear emotion not found!" << std::endl;
 	}
@@ -353,8 +210,8 @@ void SpecificWorker::EmotionalMotor_expressFear()
 
 void SpecificWorker::EmotionalMotor_expressJoy()
 {
-	if (emotionsConfig.contains("joy")) {
-		face.setConfig(emotionsConfig["joy"]);
+	if (Face::emotionsConfig.contains("joy")) {
+		face.setConfig(Face::emotionsConfig["joy"]);
 	} else {
 		std::cerr << "Joy emotion not found!" << std::endl;
 	}
@@ -362,8 +219,8 @@ void SpecificWorker::EmotionalMotor_expressJoy()
 
 void SpecificWorker::EmotionalMotor_expressSadness()
 {
-	if (emotionsConfig.contains("sadness")) {
-		face.setConfig(emotionsConfig["sadness"]);
+	if (Face::emotionsConfig.contains("sadness")) {
+		face.setConfig(Face::emotionsConfig["sadness"]);
 	} else {
 		std::cerr << "Sadness emotion not found!" << std::endl;
 	}
@@ -371,8 +228,8 @@ void SpecificWorker::EmotionalMotor_expressSadness()
 
 void SpecificWorker::EmotionalMotor_expressSurprise()
 {
-	if (emotionsConfig.contains("surprise")) {
-		face.setConfig(emotionsConfig["surprise"]);
+	if (Face::emotionsConfig.contains("surprise")) {
+		face.setConfig(Face::emotionsConfig["surprise"]);
 	} else {
 		std::cerr << "Surprise emotion not found!" << std::endl;
 	}

@@ -4,125 +4,208 @@
 
 #include "face.h"
 
-using namespace std;
+// TODO: emplear punteros si es posible
+std::map<std::string, Face::FacialGeometry> Face::JSON2ConfigPart(const nlohmann::json& jsonData) const {
+    std::map<std::string, FacialGeometry> configParts;
 
-Face::Face(int res_x, int res_y, float fact_x, float fact_y, float OFFSET)
+    for (auto& [partName, partData] : jsonData.items()) {
+        FacialGeometry configPart = {
+            {0.0f, 0.0f},
+            {0.0f, 0.0f},
+            {0.0f, 0.0f},
+            {0.0f, 0.0f},
+            {0.0f, 0.0f},
+            {0.0f, 0.0f},
+            {0.0f, 0.0f},
+            0.0f, 0.0f, 0.0f
+        };
+
+        // radius
+        if (partData.contains("r1") && partData["r1"].contains("value")) {
+            configPart.r1.value = partData["r1"]["value"].get<float>() * fact_x;
+        }
+
+        if (partData.contains("r2") && partData["r2"].contains("value")) {
+            configPart.r2.value = partData["r2"]["value"].get<float>() * fact_x;
+        }
+
+        if (partData.contains("r3") && partData["r3"].contains("value")) {
+            configPart.r3.value = partData["r3"]["value"].get<float>() * fact_x;
+        }
+
+        // centers
+        if (partData.contains("center") && partData["center"].contains("x") && partData["center"].contains("y")) {
+            configPart.center.x = partData["center"]["x"].get<float>() * fact_x;
+            configPart.center.y = partData["center"]["y"].get<float>() * fact_y;
+        }
+
+        // points
+        if (partData.contains("p1") && partData["p1"].contains("x") && partData["p1"].contains("y")) {
+            configPart.p1.x = partData["p1"]["x"].get<float>() * fact_x;
+            configPart.p1.y = partData["p1"]["y"].get<float>() * fact_y;
+        }
+
+        if (partData.contains("p2") && partData["p2"].contains("x") && partData["p2"].contains("y")) {
+            configPart.p2.x = partData["p2"]["x"].get<float>() * fact_x;
+            configPart.p2.y = partData["p2"]["y"].get<float>() * fact_y;
+        }
+
+        if (partData.contains("p3") && partData["p3"].contains("x") && partData["p3"].contains("y")) {
+            configPart.p3.x = partData["p3"]["x"].get<float>() * fact_x;
+            configPart.p3.y = partData["p3"]["y"].get<float>() * fact_y;
+        }
+
+        if (partData.contains("p4") && partData["p4"].contains("x") && partData["p4"].contains("y")) {
+            configPart.p4.x = partData["p4"]["x"].get<float>() * fact_x;
+            configPart.p4.y = partData["p4"]["y"].get<float>() * fact_y;
+        }
+
+        if (partData.contains("p5") && partData["p5"].contains("x") && partData["p5"].contains("y")) {
+            configPart.p5.x = partData["p5"]["x"].get<float>() * fact_x;
+            configPart.p5.y = partData["p5"]["y"].get<float>() * fact_y;
+        }
+
+        if (partData.contains("p6") && partData["p6"].contains("x") && partData["p6"].contains("y")) {
+            configPart.p6.x = partData["p6"]["x"].get<float>() * fact_x;
+            configPart.p6.y = partData["p6"]["y"].get<float>() * fact_y;
+        }
+
+        // associating the configuration to the correct face part
+        configParts[partName] = configPart;
+    }
+
+    // returning the configuration for an emotion
+    return configParts;
+}
+
+void debugEmotionsConfig(const std::unordered_map<std::string, std::map<std::string, Face::FacialGeometry>>& map) {
+    if (map.empty()) {
+        std::cout << "The Face::emotionsConfig map is empty." << std::endl;
+        return;
+    }
+
+    for (const auto& [emotionName, configParts] : map) {
+        std::cout << "Emotion: " << emotionName << std::endl;
+        for (const auto& [partName, configPart] : configParts) {
+            std::cout << "  Part: " << partName << std::endl;
+            std::cout << "    p1: (" << configPart.p1.x << ", " << configPart.p1.y << ")" << std::endl;
+            std::cout << "    p2: (" << configPart.p2.x << ", " << configPart.p2.y << ")" << std::endl;
+            std::cout << "    p3: (" << configPart.p3.x << ", " << configPart.p3.y << ")" << std::endl;
+            std::cout << "    p4: (" << configPart.p4.x << ", " << configPart.p4.y << ")" << std::endl;
+            std::cout << "    p5: (" << configPart.p5.x << ", " << configPart.p5.y << ")" << std::endl;
+            std::cout << "    p6: (" << configPart.p6.x << ", " << configPart.p6.y << ")" << std::endl;
+            std::cout << "    center: (" << configPart.center.x << ", " << configPart.center.y << ")" << std::endl;
+            std::cout << "    r1: " << configPart.r1.value << std::endl;
+            std::cout << "    r2: " << configPart.r2.value << std::endl;
+            std::cout << "    r3: " << configPart.r3.value << std::endl;
+        }
+    }
+}
+
+Face::Face()
     : t(0.9), stopped(false), isTalking(false), isListening(false),
       pupilFlag(false), pup_x(0),
-      pup_y(0), val_lim(10 * fact_x), val_lim_x(20 * fact_x), val_lim_y(20 * fact_y), res_x(res_x),
-      res_y(res_y), fact_x(fact_x), fact_y(fact_y), OFFSET(OFFSET)
+      pup_y(0), val_lim(10 * fact_x), val_lim_x(20 * fact_x), val_lim_y(20 * fact_y)
 {
-	DEFAULTCONFIGNEUTRAL = {
-    	{"rightEyebrow", ConfigPart{
-        	.p1 = createCoordinate(278, 99),
-        	.p2 = createCoordinate(314, 73),
-        	.p3 = createCoordinate(355, 99),
-        	.p4 = createCoordinate(313, 94)
-    	}},
-    	{"leftEyebrow", ConfigPart{
-        	.p1 = createCoordinate(122, 99),
-        	.p2 = createCoordinate(160, 73),
-        	.p3 = createCoordinate(201, 99),
-        	.p4 = createCoordinate(160, 94)
-    	}},
-    	{"rightEye", ConfigPart{
-	        .center = createCoordinate(316, 151),
-	        .r1 = {.value = 34 * fact_x},
-	        .r2 = {.value = 34 * fact_x}
-	    }},
-	    {"leftEye", ConfigPart{
-	        .center = createCoordinate(161, 151),
-	        .r1 = {.value = 34 * fact_x},
-    	    .r2 = {.value = 34 * fact_x}
-    	}},
-    	{"mouth", ConfigPart{
-	        .p1 = createCoordinate(170, 234),
-    	    .p2 = createCoordinate(239, 231),
-	        .p3 = createCoordinate(309, 234),
-	        .p4 = createCoordinate(309, 242),
-		    .p5 = createCoordinate(239, 241),
-    	    .p6 = createCoordinate(170, 242)
-    	}},
-		{"rightPupil", ConfigPart{
-        	.center = createCoordinate(316, 151),
-        	.r3 = {.value = 5 * fact_x}
-    	}},
-    	{"leftPupil", ConfigPart{
-	        .center = createCoordinate(161, 151),
-	        .r3 = {.value = 5 * fact_x}
-	    }},
-	    {"tongue", ConfigPart{
-	        .p1 = createCoordinate(199, 238),
-	        .p2 = createCoordinate(239, 238),
-	        .p3 = createCoordinate(309, 238),
-	        .p4 = createCoordinate(273, 238)
-	    }},
-	    {"rightCheek", ConfigPart{
-	        .p1 = createCoordinate(278, 187),
-	        .p2 = createCoordinate(314, 188),
-	        .p3 = createCoordinate(355, 187),
-	        .p4 = createCoordinate(313, 187)
-	    }},
-    	{"leftCheek", ConfigPart{
-	        .p1 = createCoordinate(122, 187),
-        	.p2 = createCoordinate(160, 188),
-        	.p3 = createCoordinate(201, 187),
-	        .p4 = createCoordinate(160, 187)
-	    }},
-		{"rightEyelid", ConfigPart{
-    	    .p1 = createCoordinate(266, 151),
-        	.p2 = createCoordinate(314, 80),
-        	.p3 = createCoordinate(369, 151),
-        	.p4 = createCoordinate(313, 80)
-    	}},
-    	{"leftEyelid", ConfigPart{
-       		.p1 = createCoordinate(112, 151),
-        	.p2 = createCoordinate(160, 80),
-        	.p3 = createCoordinate(214, 151),
-        	.p4 = createCoordinate(160, 80)
-    	}}
-	};
+
+    res_x = Globals::res_x;
+    res_y = Globals::res_y;
+    fact_x = Globals::fact_x;
+    fact_y = Globals::fact_y;
+    OFFSET = Globals::OFFSET;
+
+    initEmotionsConfig();
+
+    if (emotionsConfig.contains("neutral")) {
+        DEFAULT_CONFIG_NEUTRAL = emotionsConfig["neutral"];
+    } else std::cerr << "Neutral emotion not found!" << std::endl;
 
     img = cv::Mat::zeros(res_y, res_x, CV_8UC3);
-    config = DEFAULTCONFIGNEUTRAL;
-    old_config = DEFAULTCONFIGNEUTRAL;
-    config_target = DEFAULTCONFIGNEUTRAL;
+    config = DEFAULT_CONFIG_NEUTRAL;
+    old_config = DEFAULT_CONFIG_NEUTRAL;
+    config_target = DEFAULT_CONFIG_NEUTRAL;
 }
 
 Face::~Face() {
   cout << "Destroying Face" << endl;
 }
 
-Face::Point Face::createCoordinate(float x, float y) {
+void Face::initEmotionsConfig() const {
+    // Define path to json directory
+    std::filesystem::path jsonPath = std::filesystem::path(__FILE__).parent_path() / "../JSON";
+
+    // Checks if directory exists
+    if (!exists(jsonPath) || !is_directory(jsonPath)) {
+        std::cerr << "JSON directory not found: " << jsonPath << std::endl;
+        return;
+    }
+
+    // Consults all files in the directory
+    for (const auto& entry : std::filesystem::directory_iterator(jsonPath)) {
+        // Processes only json files
+        if (entry.path().extension() == ".json") {
+            std::ifstream file(entry.path());
+            if (!file.is_open()) {
+                std::cerr << "Error opening file: " << entry.path() << std::endl;
+                continue;
+            }
+
+            // parses file to json
+            nlohmann::json jsonData;
+            try {
+                file >> jsonData;
+            } catch (const std::exception& e) {
+                std::cerr << "Error parsing JSON file: " << entry.path() << std::endl;
+                std::cerr << "Exception: " << e.what() << std::endl;
+                continue;
+            }
+
+            // get key for the map
+            std::string emotionName = entry.path().stem().string();
+
+            // Converts JSON to map<string, FacialGeometry>
+            emotionsConfig[emotionName] = JSON2ConfigPart(jsonData);
+
+            // checking if the emotion has been added to the main map
+            debugEmotionsConfig(emotionsConfig);
+        }
+    }
+
+    std::cout << "Variable Face::emotionsConfig loaded successfully!" << std::endl;
+}
+
+Face::Point Face::createCoordinate(const float x, const float y) const {
 	return {x * fact_x, y * fact_y};
 }
 
-Face::Point Face::bezier(const Point& p1, const Point& p2, float interpolationFactor) {
-	Point result;
+Face::Point Face::bezier(const Point& p1, const Point& p2, const float interpolationFactor) {
+	Point result{};
 	result.x = p1.x + (p2.x - p1.x) * interpolationFactor;
 	result.y = p1.y + (p2.y - p1.y) * interpolationFactor;
 	return result;
 }
 
-vector<Face::Point> Face::getPointsBezier(vector<Point>& points) {
+vector<Face::Point> Face::getPointsBezier(const vector<Point>& points) {
     vector<Point> bezierPoints;
 
     // Preallocate the vector to avoid reallocations during the loop
     bezierPoints.reserve(51);  // We will have 51 points from t=0 to t=1 (inclusive)
 
-    for (float interpolationFactor = 0; interpolationFactor <= 1.0; interpolationFactor += 0.02) {
+    // Use an integer loop counter for the number of iterations
+    for (int iteration = 0; iteration <= 50; ++iteration) {
+        float interpolationFactor = static_cast<float>(iteration) * 0.02f; // Calculate the interpolation factor for each iteration
         vector<Point> tempPoints = points;  // Create a copy of the original points
 
         // Perform the Bézier curve reduction in place
         for (size_t k = 0; k < tempPoints.size() - 1; ++k) {
             for (size_t i = 0; i < tempPoints.size() - 1 - k; ++i) {
                 // Update points in place with Bezier calculations
-                tempPoints[i] = bezier(tempPoints[i], tempPoints[i + 1], t);
+                tempPoints[i] = bezier(tempPoints[i], tempPoints[i + 1], interpolationFactor);
             }
         }
 
         // Push the final point of the Bézier curve for this t value
-        bezierPoints.push_back(tempPoints[0]);
+        bezierPoints.emplace_back(tempPoints[0]);
     }
 
     return bezierPoints;
@@ -132,31 +215,32 @@ float interpolate(float start, float end, float t) {
     return start + (end - start) * t;
 }
 
-map<string, Face::ConfigPart> Face::getBezierConfig(
-    const map<string, ConfigPart>& oldConfig,
-    const map<string, ConfigPart>& configTarget,
-    float interpolationFactor) {
+map<string, Face::FacialGeometry> Face::getBezierConfig(
+    const map<string, FacialGeometry>& _old_config,
+    const map<string, FacialGeometry>& _config_target,
+    const float interpolationFactor) {
 
-    map<string, ConfigPart> interpolatedConfig;
+    map<string, FacialGeometry> interpolatedConfig;
 
-    for (const auto& [part, old_part] : oldConfig) {
-        auto it = configTarget.find(part);
-        if (it == configTarget.end()) {
+    for (const auto& [part, old_part] : _old_config) {
+        auto it = _config_target.find(part);
+        if (it == _config_target.end()) {
             throw std::runtime_error("Part not found in configTarget: " + part);
         }
-        const ConfigPart& target_part = it->second;
 
-        ConfigPart new_part = old_part;
+        const auto& [target_part_key, target_part] = *it;
+        FacialGeometry new_part = old_part;
 
         // points interpolation
         new_part.p1 = bezier(old_part.p1, target_part.p1, interpolationFactor);
         new_part.p2 = bezier(old_part.p2, target_part.p2, interpolationFactor);
         new_part.p3 = bezier(old_part.p3, target_part.p3, interpolationFactor);
         new_part.p4 = bezier(old_part.p4, target_part.p4, interpolationFactor);
-        if (old_part.p5.x || old_part.p5.y) {
+
+        if (old_part.p5.x != 0.0f || old_part.p5.y != 0.0f) {
             new_part.p5 = bezier(old_part.p5, target_part.p5, interpolationFactor);
         }
-        if (old_part.p6.x || old_part.p6.y) {
+        if (old_part.p6.x != 0.0f || old_part.p6.y != 0.0f) {
             new_part.p6 = bezier(old_part.p6, target_part.p6, interpolationFactor);
         }
 
@@ -176,7 +260,7 @@ map<string, Face::ConfigPart> Face::getBezierConfig(
 void Face::init()
 {
     // Initialize face parameters and start the face animation thread
-    thread(&Face::run, this).detach();
+    std::thread(&Face::run, this).detach();
 }
 
 // Start the face thread (override from threading.Thread or similar)
@@ -185,7 +269,7 @@ void Face::run()
     // Get the current time at the start of the loop
     auto start = std::chrono::steady_clock::now();
 
-    int sec = randInt(2, 6);
+    int sec = Globals::randInt(2, 6);
 
     while (!stopped)
     {
@@ -201,7 +285,7 @@ void Face::run()
         if (elapsed_seconds.count() > sec)
         {
             blinkFlag = true;
-            sec = randInt(2, 4);
+            sec = Globals::randInt(2, 4);
             start = std::chrono::steady_clock::now();  // Reset the timer
         }
 
@@ -231,7 +315,7 @@ void Face::moveFace(bool blinkFlag, bool isTalking, bool isListening) {
 }
 
 // Method to draw the face configuration
-void Face::drawConfig(const map<string, Face::ConfigPart>& configAux) {
+void Face::drawConfig(const map<string, Face::FacialGeometry>& configAux) const {
     sf::RenderWindow window(sf::VideoMode(res_x, res_y), "Face");
     window.clear(sf::Color::White);
 
@@ -307,7 +391,7 @@ cv::Mat Face::render() {
 }
 
 // Method to render the eyebrow
-void Face::renderEyebrow(const ConfigPart& eyebrow, sf::RenderWindow& window) {
+void Face::renderEyebrow(const FacialGeometry& eyebrow, sf::RenderWindow& window) {
     // Create a vector of points for the eyebrow
     vector<Face::Point> eyebrowPoints = {eyebrow.p1, eyebrow.p2, eyebrow.p3, eyebrow.p4};
 
@@ -317,7 +401,7 @@ void Face::renderEyebrow(const ConfigPart& eyebrow, sf::RenderWindow& window) {
 
     // Convert the Face::Point points to sf::Vector2f
     for (const auto& point : points) {
-        bezierPoints.push_back(sf::Vector2f(point.x, point.y));
+        bezierPoints.emplace_back(point.x, point.y);
     }
 
     // Create a VertexArray to represent the eyebrow
@@ -333,8 +417,8 @@ void Face::renderEyebrow(const ConfigPart& eyebrow, sf::RenderWindow& window) {
 }
 
 // Method to render the eyelid
-void Face::renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window) {
-    // Define eyelid points from the ConfigPart object using Face::Point structure.
+void Face::renderEyelid(const FacialGeometry& eyelid, sf::RenderWindow& window) {
+    // Define eyelid points from the FacialGeometry object using Face::Point structure.
     vector<Face::Point> eyelidPoints = {eyelid.p1, eyelid.p2, eyelid.p3, eyelid.p4};
 
     // Get interpolated points using Bézier curve for both the upper and lower parts of the eyelid.
@@ -343,7 +427,7 @@ void Face::renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window) {
 
     // Convert the Face::Point to sf::Vector2f for rendering.
     for (const auto& point : upperPoints) {
-        bezierUpper.push_back(sf::Vector2f(point.x, point.y));
+        bezierUpper.emplace_back(point.x, point.y);
     }
 
     // Create a vector for the lower part of the eyelid.
@@ -353,7 +437,7 @@ void Face::renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window) {
     // Convert the Face::Point to sf::Vector2f for rendering.
     vector<sf::Vector2f> bezierLower;
     for (const auto& point : lowerBezierPoints) {
-        bezierLower.push_back(sf::Vector2f(point.x, point.y));
+        bezierLower.emplace_back(point.x, point.y);
     }
 
     // Combine the upper and lower parts of the eyelid.
@@ -374,7 +458,7 @@ void Face::renderEyelid(const ConfigPart& eyelid, sf::RenderWindow& window) {
 }
 
 // Method to render the pupil (e.g., based on certain points)
-void Face::renderPupil(const ConfigPart& pupil, sf::RenderWindow& window) {
+void Face::renderPupil(const FacialGeometry& pupil, sf::RenderWindow& window) {
     // Create a CircleShape to render the pupil, using the radius (r3) from the pupil config
     sf::CircleShape pupilShape(pupil.r3.value);
 
@@ -388,7 +472,7 @@ void Face::renderPupil(const ConfigPart& pupil, sf::RenderWindow& window) {
 }
 
 // Method to render the eye
-void Face::renderEye(const ConfigPart& eye, sf::RenderWindow& window) {
+void Face::renderEye(const FacialGeometry& eye, sf::RenderWindow& window) {
     sf::CircleShape eyeShape(eye.r1.value);  // Create the base circle with the radius on the X axis
     eyeShape.setFillColor(sf::Color::White);
     eyeShape.setOutlineColor(sf::Color::Black);
@@ -404,8 +488,8 @@ void Face::renderEye(const ConfigPart& eye, sf::RenderWindow& window) {
 }
 
 // Method to render the cheek
-void Face::renderCheek(const ConfigPart& cheek, sf::RenderWindow& window) {
-    // Define the points for the cheek from the ConfigPart object.
+void Face::renderCheek(const FacialGeometry& cheek, sf::RenderWindow& window) {
+    // Define the points for the cheek from the FacialGeometry object.
     vector<Face::Point> cheekPoints1 = {cheek.p1, cheek.p2, cheek.p3};
     vector<Face::Point> cheekPoints2 = {cheek.p3, cheek.p4, cheek.p1};
 
@@ -413,15 +497,15 @@ void Face::renderCheek(const ConfigPart& cheek, sf::RenderWindow& window) {
     vector<sf::Vector2f> bezierPoints1, bezierPoints2;
 
     // Interpolate the first curve (P1 -> P2 -> P3).
-    vector<Face::Point> points1 = getPointsBezier(cheekPoints1);
+    vector<Point> points1 = getPointsBezier(cheekPoints1);
     for (const auto& point : points1) {
-        bezierPoints1.push_back(sf::Vector2f(point.x, point.y));
+        bezierPoints1.emplace_back(point.x, point.y);
     }
 
     // Interpolate the second curve (P3 -> P4 -> P1).
     vector<Face::Point> points2 = getPointsBezier(cheekPoints2);
     for (const auto& point : points2) {
-        bezierPoints2.push_back(sf::Vector2f(point.x, point.y));
+        bezierPoints2.emplace_back(point.x, point.y);
     }
 
     // Combine both sets of Bézier points.
@@ -441,8 +525,8 @@ void Face::renderCheek(const ConfigPart& cheek, sf::RenderWindow& window) {
 }
 
 // Method to render the mouth
-void Face::renderMouth(const ConfigPart& mouth, sf::RenderWindow& window) {
-    // Define mouth points from ConfigPart.
+void Face::renderMouth(const FacialGeometry& mouth, sf::RenderWindow& window) {
+    // Define mouth points from FacialGeometry.
     vector<Face::Point> mouthPoints = {mouth.p1, mouth.p2, mouth.p3, mouth.p4, mouth.p5, mouth.p6};
 
     // Get interpolated points using Bézier curve.
@@ -451,7 +535,7 @@ void Face::renderMouth(const ConfigPart& mouth, sf::RenderWindow& window) {
 
     // Convert custom points to sf::Vector2f for rendering.
     for (const auto& point : points) {
-        bezierPoints.push_back(sf::Vector2f(point.x, point.y));
+        bezierPoints.emplace_back(point.x, point.y);
     }
 
     // Create a VertexArray to represent the mouth as a triangle fan.
@@ -468,17 +552,17 @@ void Face::renderMouth(const ConfigPart& mouth, sf::RenderWindow& window) {
 }
 
 // Method to render the tongue
-void Face::renderTongue(const ConfigPart& tongue, sf::RenderWindow& window) {
-    // Define the tongue points from the ConfigPart.
-    vector<Face::Point> tonguePoints = {tongue.p1, tongue.p2, tongue.p3, tongue.p4};
+void Face::renderTongue(const FacialGeometry& tongue, sf::RenderWindow& window) {
+    // Define the tongue points from the FacialGeometry.
+    vector tonguePoints = {tongue.p1, tongue.p2, tongue.p3, tongue.p4};
 
     // Get interpolated points using Bézier curve.
     vector<sf::Vector2f> bezierPoints;
-    vector<Face::Point> points = getPointsBezier(tonguePoints);
+    vector<Point> points = getPointsBezier(tonguePoints);
 
     // Convert custom Face::Point to sf::Vector2f for rendering.
     for (const auto& point : points) {
-        bezierPoints.push_back(sf::Vector2f(point.x, point.y));
+        bezierPoints.emplace_back(point.x, point.y);
     }
 
     // Create a vertex array for the tongue shape.
@@ -500,32 +584,32 @@ void Face::recordPoint() {
 }
 
 // Method to set the configuration for the face
-void Face::setConfig(const map<string, ConfigPart> _config) {
+void Face::setConfig(const std::map<std::string, FacialGeometry>& _config) {
     config_target = _config;
     old_config = config;
     t = 0.06666666666666667;
 }
 
 // Method to set whether the face is talking
-void Face::setTalking(bool _talking) {
+void Face::setTalking(const bool _talking) {
     isTalking = _talking;
 }
 
 // Method to set whether the face is listening
-void Face::setListening(bool _listening) {
+void Face::setListening(const bool _listening) {
     isListening = _listening;
 }
 
-void Face::setPupilFlag(bool _pupilFlag) {
+void Face::setPupilFlag(const bool _pupilFlag) {
     pupilFlag = _pupilFlag;
 }
 
-void Face::setPupX(bool _pup_x) {
-    pupilFlag = _pup_x;
+void Face::setPupX(const float _pup_x) {
+    pup_x = _pup_x;
 }
 
-void Face::setPupY(bool _pup_y) {
-    pup_x = _pup_y;
+void Face::setPupY(const float _pup_y) {
+    pup_y = _pup_y;
 }
 
 // Method to stop the face thread

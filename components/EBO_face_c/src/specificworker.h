@@ -48,10 +48,6 @@ class SpecificWorker : public GenericWorker
 {
 Q_OBJECT
 public:
-
-	float fact_x, fact_y, OFFSET;
-	int res_x, res_y;
-
 	SpecificWorker(TuplePrx tprx, bool startup_check);
 	~SpecificWorker() override;
 	bool setParams(RoboCompCommonBehavior::ParameterList params) override;
@@ -78,12 +74,9 @@ private:
 	bool startup_check_flag;
 
 	// screen management
-	void initWindow() const;
+	static void initWindow() ;
 
 	Face face;
-	std::unordered_map<std::string, std::map<std::string, Face::FacialGeometry>> emotionsConfig;
-	std::map<std::string, Face::FacialGeometry> JSON2ConfigPart(const nlohmann::json& jsonData) const;
-	void initEmotionsConfig();
 };
 
 #endif
