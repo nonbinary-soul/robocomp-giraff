@@ -15,5 +15,3 @@ int Globals::randInt(const int min, const int max) {
     std::uniform_int_distribution<> distrib(min, max);
     return distrib(gen);
 }
-
-Globals::SharedData Globals::shared_data;

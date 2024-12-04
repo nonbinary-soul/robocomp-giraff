@@ -45,7 +45,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${RC_COMPONENT_DEVEL_PATH}/bin)
 # libraries that will be used in this project
 FIND_PACKAGE(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(nlohmann_json 3.10.0 REQUIRED)
+FIND_PACKAGE(nlohmann_json REQUIRED)
 
 
 

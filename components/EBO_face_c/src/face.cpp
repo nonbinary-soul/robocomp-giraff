@@ -348,7 +348,7 @@ void Face::drawConfig(const map<string, Face::FacialGeometry>& configAux) const 
     window.display();
 
     while (window.isOpen()) {
-        sf::Event event;
+        sf::Event event = sf::Event();
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
@@ -356,7 +356,6 @@ void Face::drawConfig(const map<string, Face::FacialGeometry>& configAux) const 
     }
 }
 
-// Method to render the face image
 // Method to render the face image
 cv::Mat Face::render() {
     // Check if animation is in progress (t <= 1.0) and if the target configuration is not empty
@@ -373,10 +372,10 @@ cv::Mat Face::render() {
         t += OFFSET;
 
         // Show the rendered image in a window called "Rendered Image"
-        cv::imshow("Rendered Image", img);
+        imshow("Rendered Image", img);
 
         // Lock the mutex to safely update the shared image data across threads
-        lock_guard<mutex> lock(shared_data.lock);
+        lock_guard lock(shared_data.lock);
         shared_data.image = img; // Update the global shared image with the current frame
     } else {
         // If animation is complete, update the old and target configurations
@@ -393,11 +392,11 @@ cv::Mat Face::render() {
 // Method to render the eyebrow
 void Face::renderEyebrow(const FacialGeometry& eyebrow, sf::RenderWindow& window) {
     // Create a vector of points for the eyebrow
-    vector<Face::Point> eyebrowPoints = {eyebrow.p1, eyebrow.p2, eyebrow.p3, eyebrow.p4};
+    vector eyebrowPoints = {eyebrow.p1, eyebrow.p2, eyebrow.p3, eyebrow.p4};
 
     // Get the Bézier points for the eyebrow
     vector<sf::Vector2f> bezierPoints;
-    vector<Face::Point> points = getPointsBezier(eyebrowPoints);
+    vector<Point> points = getPointsBezier(eyebrowPoints);
 
     // Convert the Face::Point points to sf::Vector2f
     for (const auto& point : points) {
@@ -419,11 +418,11 @@ void Face::renderEyebrow(const FacialGeometry& eyebrow, sf::RenderWindow& window
 // Method to render the eyelid
 void Face::renderEyelid(const FacialGeometry& eyelid, sf::RenderWindow& window) {
     // Define eyelid points from the FacialGeometry object using Face::Point structure.
-    vector<Face::Point> eyelidPoints = {eyelid.p1, eyelid.p2, eyelid.p3, eyelid.p4};
+    vector<Point> eyelidPoints = {eyelid.p1, eyelid.p2, eyelid.p3, eyelid.p4};
 
     // Get interpolated points using Bézier curve for both the upper and lower parts of the eyelid.
     vector<sf::Vector2f> bezierUpper;
-    vector<Face::Point> upperPoints = getPointsBezier(eyelidPoints);  // Upper part of eyelid
+    vector<Point> upperPoints = getPointsBezier(eyelidPoints);  // Upper part of eyelid
 
     // Convert the Face::Point to sf::Vector2f for rendering.
     for (const auto& point : upperPoints) {
@@ -431,8 +430,8 @@ void Face::renderEyelid(const FacialGeometry& eyelid, sf::RenderWindow& window) 
     }
 
     // Create a vector for the lower part of the eyelid.
-    vector<Face::Point> lowerPoints = {eyelid.p3, eyelid.p4, eyelid.p1};  // Lower part of eyelid
-    vector<Face::Point> lowerBezierPoints = getPointsBezier(lowerPoints);  // Get interpolated points for lower part
+    vector<Point> lowerPoints = {eyelid.p3, eyelid.p4, eyelid.p1};  // Lower part of eyelid
+    vector<Point> lowerBezierPoints = getPointsBezier(lowerPoints);  // Get interpolated points for lower part
 
     // Convert the Face::Point to sf::Vector2f for rendering.
     vector<sf::Vector2f> bezierLower;

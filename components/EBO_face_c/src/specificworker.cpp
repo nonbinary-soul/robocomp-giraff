@@ -39,12 +39,12 @@ void SpecificWorker::initWindow() {
 		window.clear(sf::Color::White);
 
 		// Display the image, if available
-		std::lock_guard<std::mutex> guard(shared_data.lock); // Protect shared data with a lock
+		std::lock_guard guard(Face::shared_data.lock); // Protect shared data with a lock
 
-		if (!shared_data.image.empty()) {
+		if (!Face::shared_data.image.empty()) {
 			// Convert OpenCV image (BGR) to RGB
 			cv::Mat img_rgb;
-			cv::cvtColor(shared_data.image, img_rgb, cv::COLOR_BGR2RGB);
+			cvtColor(Face::shared_data.image, img_rgb, cv::COLOR_BGR2RGB);
 
 			// Create a SFML image
 			sf::Image image;

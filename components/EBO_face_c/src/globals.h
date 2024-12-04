@@ -19,13 +19,6 @@ public:
 
     // functions
     static int randInt(int min, int max);
-
-    typedef struct SharedData {
-        cv::Mat image;
-        std::mutex lock;
-    } SharedData;
-
-    static SharedData shared_data;
 };
 
 #endif //GLOBALS_H

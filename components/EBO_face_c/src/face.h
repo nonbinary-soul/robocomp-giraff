@@ -15,6 +15,9 @@
 #include <opencv2/opencv.hpp>
 #include <SFML/Graphics.hpp>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 class Face {
 public:
     struct Point {
@@ -29,6 +32,13 @@ public:
         Point p1, p2, p3, p4, p5, p6, center;
         Radius r1, r2, r3;
     };
+
+    typedef struct SharedData {
+        cv::Mat image;
+        std::mutex lock;
+    } SharedData;
+
+    static SharedData shared_data;
 
     static std::unordered_map<std::string, std::map<std::string, FacialGeometry>> emotionsConfig;
 
