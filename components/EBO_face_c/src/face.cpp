@@ -102,23 +102,39 @@ void debugEmotionsConfig(const std::unordered_map<std::string, std::map<std::str
     }
 }
 
+Face::SharedData Face::shared_data = {
+    cv::Mat(),
+    std::mutex()
+};
+
+std::unordered_map<std::string, std::map<std::string, Face::FacialGeometry>> Face::emotionsConfig;
+
 Face::Face()
-    : t(0.9), stopped(false), isTalking(false), isListening(false),
-      pupilFlag(false), pup_x(0),
-      pup_y(0), val_lim(10 * fact_x), val_lim_x(20 * fact_x), val_lim_y(20 * fact_y)
+    :
+      t(0.9),
+      stopped(false),
+      isTalking(false),
+      isListening(false),
+      pupilFlag(false),
+      pup_x(0),
+      pup_y(0),
+      res_x(Globals::res_x),
+      res_y(Globals::res_y),
+      fact_x(Globals::fact_x),
+      fact_y(Globals::fact_y),
+      OFFSET(Globals::OFFSET),
+      val_lim(10 * fact_x),
+      val_lim_x(20 * fact_x),
+      val_lim_y(20 * fact_y)
 {
-
-    res_x = Globals::res_x;
-    res_y = Globals::res_y;
-    fact_x = Globals::fact_x;
-    fact_y = Globals::fact_y;
-    OFFSET = Globals::OFFSET;
-
     initEmotionsConfig();
 
     if (emotionsConfig.contains("neutral")) {
         DEFAULT_CONFIG_NEUTRAL = emotionsConfig["neutral"];
-    } else std::cerr << "Neutral emotion not found!" << std::endl;
+    } else {
+        std::cerr << "Neutral emotion not found!" << std::endl;
+        throw std::runtime_error("Neutral emotion configuration is required.");
+    }
 
     img = cv::Mat::zeros(res_y, res_x, CV_8UC3);
     config = DEFAULT_CONFIG_NEUTRAL;
@@ -127,7 +143,7 @@ Face::Face()
 }
 
 Face::~Face() {
-  cout << "Destroying Face" << endl;
+  std::cout << "Destroying Face" << std::endl;
 }
 
 void Face::initEmotionsConfig() const {
@@ -185,8 +201,8 @@ Face::Point Face::bezier(const Point& p1, const Point& p2, const float interpola
 	return result;
 }
 
-vector<Face::Point> Face::getPointsBezier(const vector<Point>& points) {
-    vector<Point> bezierPoints;
+std::vector<Face::Point> Face::getPointsBezier(const std::vector<Point>& points) {
+    std::vector<Point> bezierPoints;
 
     // Preallocate the vector to avoid reallocations during the loop
     bezierPoints.reserve(51);  // We will have 51 points from t=0 to t=1 (inclusive)
@@ -194,7 +210,7 @@ vector<Face::Point> Face::getPointsBezier(const vector<Point>& points) {
     // Use an integer loop counter for the number of iterations
     for (int iteration = 0; iteration <= 50; ++iteration) {
         float interpolationFactor = static_cast<float>(iteration) * 0.02f; // Calculate the interpolation factor for each iteration
-        vector<Point> tempPoints = points;  // Create a copy of the original points
+        std::vector<Point> tempPoints = points;  // Create a copy of the original points
 
         // Perform the Bézier curve reduction in place
         for (size_t k = 0; k < tempPoints.size() - 1; ++k) {
@@ -215,12 +231,12 @@ float interpolate(float start, float end, float t) {
     return start + (end - start) * t;
 }
 
-map<string, Face::FacialGeometry> Face::getBezierConfig(
-    const map<string, FacialGeometry>& _old_config,
-    const map<string, FacialGeometry>& _config_target,
+std::map<std::string, Face::FacialGeometry> Face::getBezierConfig(
+    const std::map<std::string, FacialGeometry>& _old_config,
+    const std::map<std::string, FacialGeometry>& _config_target,
     const float interpolationFactor) {
 
-    map<string, FacialGeometry> interpolatedConfig;
+    std::map<std::string, FacialGeometry> interpolatedConfig;
 
     for (const auto& [part, old_part] : _old_config) {
         auto it = _config_target.find(part);
@@ -315,7 +331,7 @@ void Face::moveFace(bool blinkFlag, bool isTalking, bool isListening) {
 }
 
 // Method to draw the face configuration
-void Face::drawConfig(const map<string, Face::FacialGeometry>& configAux) const {
+void Face::drawConfig(const std::map<std::string, Face::FacialGeometry>& configAux) const {
     sf::RenderWindow window(sf::VideoMode(res_x, res_y), "Face");
     window.clear(sf::Color::White);
 
@@ -363,7 +379,7 @@ cv::Mat Face::render() {
         // Generate a new configuration using Bezier interpolation between the old and target configurations
         config = getBezierConfig(old_config, config_target, t);
 
-        cout << "Animating step " << t << " - Interpolating configuration." << endl;
+        std::cout << "Animating step " << t << " - Interpolating configuration." << std::endl;
 
         // Draw the current configuration on the image (img)
         drawConfig(config);
@@ -375,14 +391,14 @@ cv::Mat Face::render() {
         imshow("Rendered Image", img);
 
         // Lock the mutex to safely update the shared image data across threads
-        lock_guard lock(shared_data.lock);
+        std::lock_guard lock(shared_data.lock);
         shared_data.image = img; // Update the global shared image with the current frame
     } else {
         // If animation is complete, update the old and target configurations
         old_config = config_target;
         config_target = {}; // Reset target configuration
 
-        cout << "Animation complete. Updating configuration." << endl;
+        std::cout << "Animation complete. Updating configuration." << std::endl;
     }
 
     // Return the rendered image (img)
@@ -392,11 +408,11 @@ cv::Mat Face::render() {
 // Method to render the eyebrow
 void Face::renderEyebrow(const FacialGeometry& eyebrow, sf::RenderWindow& window) {
     // Create a vector of points for the eyebrow
-    vector eyebrowPoints = {eyebrow.p1, eyebrow.p2, eyebrow.p3, eyebrow.p4};
+    std::vector eyebrowPoints = {eyebrow.p1, eyebrow.p2, eyebrow.p3, eyebrow.p4};
 
     // Get the Bézier points for the eyebrow
-    vector<sf::Vector2f> bezierPoints;
-    vector<Point> points = getPointsBezier(eyebrowPoints);
+    std::vector<sf::Vector2f> bezierPoints;
+    std::vector<Point> points = getPointsBezier(eyebrowPoints);
 
     // Convert the Face::Point points to sf::Vector2f
     for (const auto& point : points) {
@@ -418,11 +434,11 @@ void Face::renderEyebrow(const FacialGeometry& eyebrow, sf::RenderWindow& window
 // Method to render the eyelid
 void Face::renderEyelid(const FacialGeometry& eyelid, sf::RenderWindow& window) {
     // Define eyelid points from the FacialGeometry object using Face::Point structure.
-    vector<Point> eyelidPoints = {eyelid.p1, eyelid.p2, eyelid.p3, eyelid.p4};
+    std::vector<Point> eyelidPoints = {eyelid.p1, eyelid.p2, eyelid.p3, eyelid.p4};
 
     // Get interpolated points using Bézier curve for both the upper and lower parts of the eyelid.
-    vector<sf::Vector2f> bezierUpper;
-    vector<Point> upperPoints = getPointsBezier(eyelidPoints);  // Upper part of eyelid
+    std::vector<sf::Vector2f> bezierUpper;
+    std::vector<Point> upperPoints = getPointsBezier(eyelidPoints);  // Upper part of eyelid
 
     // Convert the Face::Point to sf::Vector2f for rendering.
     for (const auto& point : upperPoints) {
@@ -430,17 +446,17 @@ void Face::renderEyelid(const FacialGeometry& eyelid, sf::RenderWindow& window) 
     }
 
     // Create a vector for the lower part of the eyelid.
-    vector<Point> lowerPoints = {eyelid.p3, eyelid.p4, eyelid.p1};  // Lower part of eyelid
-    vector<Point> lowerBezierPoints = getPointsBezier(lowerPoints);  // Get interpolated points for lower part
+    std::vector<Point> lowerPoints = {eyelid.p3, eyelid.p4, eyelid.p1};  // Lower part of eyelid
+    std::vector<Point> lowerBezierPoints = getPointsBezier(lowerPoints);  // Get interpolated points for lower part
 
     // Convert the Face::Point to sf::Vector2f for rendering.
-    vector<sf::Vector2f> bezierLower;
+    std::vector<sf::Vector2f> bezierLower;
     for (const auto& point : lowerBezierPoints) {
         bezierLower.emplace_back(point.x, point.y);
     }
 
     // Combine the upper and lower parts of the eyelid.
-    vector<sf::Vector2f> eyelidBezierPoints = bezierUpper;
+    std::vector<sf::Vector2f> eyelidBezierPoints = bezierUpper;
     eyelidBezierPoints.insert(eyelidBezierPoints.end(), bezierLower.begin(), bezierLower.end());
 
     // Create a VertexArray to represent the eyelid as a triangle fan.
@@ -489,20 +505,20 @@ void Face::renderEye(const FacialGeometry& eye, sf::RenderWindow& window) {
 // Method to render the cheek
 void Face::renderCheek(const FacialGeometry& cheek, sf::RenderWindow& window) {
     // Define the points for the cheek from the FacialGeometry object.
-    vector<Face::Point> cheekPoints1 = {cheek.p1, cheek.p2, cheek.p3};
-    vector<Face::Point> cheekPoints2 = {cheek.p3, cheek.p4, cheek.p1};
+    std::vector<Face::Point> cheekPoints1 = {cheek.p1, cheek.p2, cheek.p3};
+    std::vector<Face::Point> cheekPoints2 = {cheek.p3, cheek.p4, cheek.p1};
 
     // Get interpolated points for both Bézier curves.
-    vector<sf::Vector2f> bezierPoints1, bezierPoints2;
+    std::vector<sf::Vector2f> bezierPoints1, bezierPoints2;
 
     // Interpolate the first curve (P1 -> P2 -> P3).
-    vector<Point> points1 = getPointsBezier(cheekPoints1);
+    std::vector<Point> points1 = getPointsBezier(cheekPoints1);
     for (const auto& point : points1) {
         bezierPoints1.emplace_back(point.x, point.y);
     }
 
     // Interpolate the second curve (P3 -> P4 -> P1).
-    vector<Face::Point> points2 = getPointsBezier(cheekPoints2);
+    std::vector<Face::Point> points2 = getPointsBezier(cheekPoints2);
     for (const auto& point : points2) {
         bezierPoints2.emplace_back(point.x, point.y);
     }
@@ -526,11 +542,11 @@ void Face::renderCheek(const FacialGeometry& cheek, sf::RenderWindow& window) {
 // Method to render the mouth
 void Face::renderMouth(const FacialGeometry& mouth, sf::RenderWindow& window) {
     // Define mouth points from FacialGeometry.
-    vector<Face::Point> mouthPoints = {mouth.p1, mouth.p2, mouth.p3, mouth.p4, mouth.p5, mouth.p6};
+    std::vector<Face::Point> mouthPoints = {mouth.p1, mouth.p2, mouth.p3, mouth.p4, mouth.p5, mouth.p6};
 
     // Get interpolated points using Bézier curve.
-    vector<sf::Vector2f> bezierPoints;
-    vector<Face::Point> points = getPointsBezier(mouthPoints);
+    std::vector<sf::Vector2f> bezierPoints;
+    std::vector<Face::Point> points = getPointsBezier(mouthPoints);
 
     // Convert custom points to sf::Vector2f for rendering.
     for (const auto& point : points) {
@@ -553,11 +569,11 @@ void Face::renderMouth(const FacialGeometry& mouth, sf::RenderWindow& window) {
 // Method to render the tongue
 void Face::renderTongue(const FacialGeometry& tongue, sf::RenderWindow& window) {
     // Define the tongue points from the FacialGeometry.
-    vector tonguePoints = {tongue.p1, tongue.p2, tongue.p3, tongue.p4};
+    std::vector tonguePoints = {tongue.p1, tongue.p2, tongue.p3, tongue.p4};
 
     // Get interpolated points using Bézier curve.
-    vector<sf::Vector2f> bezierPoints;
-    vector<Point> points = getPointsBezier(tonguePoints);
+    std::vector<sf::Vector2f> bezierPoints;
+    std::vector<Point> points = getPointsBezier(tonguePoints);
 
     // Convert custom Face::Point to sf::Vector2f for rendering.
     for (const auto& point : points) {

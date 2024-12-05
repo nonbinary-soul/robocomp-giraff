@@ -9,6 +9,7 @@
 #include <thread>
 #include <chrono>
 #include <random>
+#include <fstream>
 #include <string>
 #include <map>
 #include <vector>
@@ -115,12 +116,12 @@ private:
     float pup_x;
     float pup_y;
 
-    float val_lim;
-    float val_lim_x, val_lim_y;
-
     int res_x, res_y;
     float fact_x, fact_y;
     float OFFSET;
+
+    float val_lim;
+    float val_lim_x, val_lim_y;
 
     cv::Mat rotateImage(const cv::Mat& image, double angle);
 
