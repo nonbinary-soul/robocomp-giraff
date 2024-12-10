@@ -45,6 +45,11 @@ void FaceController::update() {
         interpolationFactor += 0.05f; // Adjust the speed of interpolation
     }
 
+    // check if the map has been loaded correctly
+    // for (const auto &[key, value] : currentConfig) {
+    //    std::cout << "Config: " << key << " -> (" << value.x << ", " << value.y << ")\n";
+    //}
+
     // Update face rendering
     renderer.setFaceConfig(currentConfig);
 
@@ -74,33 +79,35 @@ void FaceController::interpolateConfigs() {
 
 void FaceController::loadEmotionConfig(const std::string &emotion, const nlohmann::json &jsonData) {
     std::map<std::string, sf::Vector2f> config;
+    float fact_x = Globals::fact_x; // Factores globales de escala
+    float fact_y = Globals::fact_y;
 
     for (auto &[partName, partData] : jsonData.items()) {
         sf::Vector2f partPosition;
 
         if (partData.contains("center")) {
-            partPosition.x = partData["center"]["x"].get<float>();
-            partPosition.y = partData["center"]["y"].get<float>();
+            partPosition.x = partData["center"]["x"].get<float>() * fact_x;
+            partPosition.y = partData["center"]["y"].get<float>() * fact_y;
             config[partName + "_center"] = partPosition;
         }
 
         std::vector<std::string> points = {"p1", "p2", "p3", "p4", "p5", "p6"};
         for (const std::string &point : points) {
             if (partData.contains(point)) {
-                partPosition.x = partData[point]["x"].get<float>();
-                partPosition.y = partData[point]["y"].get<float>();
+                partPosition.x = partData[point]["x"].get<float>() * fact_x;
+                partPosition.y = partData[point]["y"].get<float>() * fact_y;
                 config[partName + "_" + point] = partPosition;
             }
         }
 
         if (partData.contains("r1")) {
-            config[partName + "_r1"] = {partData["r1"]["value"].get<float>(), 0};
+            config[partName + "_r1"] = {partData["r1"]["value"].get<float>() * fact_x, 0};
         }
         if (partData.contains("r2")) {
-            config[partName + "_r2"] = {partData["r2"]["value"].get<float>(), 0};
+            config[partName + "_r2"] = {partData["r2"]["value"].get<float>() * fact_x, 0};
         }
         if (partData.contains("r3")) {
-            config[partName + "_r3"] = {partData["r3"]["value"].get<float>(), 0};
+            config[partName + "_r3"] = {partData["r3"]["value"].get<float>() * fact_x, 0};
         }
     }
 

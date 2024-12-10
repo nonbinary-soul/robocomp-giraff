@@ -121,6 +121,9 @@ void SpecificWorker::emergency()
 }
 
 void SpecificWorker::compute() {
+	static bool toggle = true; // Toggle between emotions
+	static sf::Clock emotionTimer; // Timer to switch emotions every few seconds
+
 	sf::Event event{};
 	while (window.pollEvent(event)) {
 		if (event.type == sf::Event::Closed ||
@@ -130,7 +133,18 @@ void SpecificWorker::compute() {
 			}
 	}
 
-	EmotionalMotor_expressDisgust();
+	// Switch emotions every 3 seconds
+	if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
+		if (toggle) {
+			EmotionalMotor_expressAnger(); // Switch to "anger"
+		} else {
+			EmotionalMotor_expressDisgust(); // Switch to "disgust"
+		}
+		toggle = !toggle;
+		emotionTimer.restart(); // Reset the timer
+	}
+
+	// Render the current face configuration
 	window.clear();
 	faceRenderer.render(window);
 	window.display();

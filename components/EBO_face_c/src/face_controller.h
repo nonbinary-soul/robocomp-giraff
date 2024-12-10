@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 #include <mutex>
+#include <iostream>
+#include <globals.h>
 
 class FaceController {
 public:

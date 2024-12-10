@@ -8,8 +8,57 @@ FaceRenderer::FaceRenderer(int resolutionX, int resolutionY) {
     texture.clear(sf::Color::White);
 }
 
-
 void FaceRenderer::render(sf::RenderWindow &window) {
+    texture.clear(sf::Color::White); // Clear the texture before rendering
+
+    // Render each facial part based on faceConfig
+    for (const auto &[key, value] : faceConfig) {
+        if (key.find("_center") != std::string::npos) {
+            // Handle eyes or pupils
+            std::string baseKey = key.substr(0, key.find("_center"));
+            if (key.find("Eye") != std::string::npos) {
+                if (faceConfig.find(baseKey + "_r1") != faceConfig.end() &&
+                    faceConfig.find(baseKey + "_r2") != faceConfig.end()) {
+                    float radiusX = faceConfig.at(baseKey + "_r1").x;
+                    float radiusY = faceConfig.at(baseKey + "_r2").x;
+                    renderEye(value, radiusX, radiusY);
+                }
+            } else if (key.find("Pupil") != std::string::npos) {
+                if (faceConfig.find(baseKey + "_r3") != faceConfig.end()) {
+                    float radius = faceConfig.at(baseKey + "_r3").x;
+                    renderPupil(value, radius);
+                }
+            }
+        } else if (key.find("Eyebrow") != std::string::npos || key.find("Eyelid") != std::string::npos) {
+            // Collect points for eyebrows or eyelids
+            std::vector<sf::Vector2f> points;
+            for (int i = 1; i <= 4; ++i) {
+                std::string pointKey = key.substr(0, key.find("_p")) + "_p" + std::to_string(i);
+                if (faceConfig.find(pointKey) != faceConfig.end()) {
+                    points.push_back(faceConfig.at(pointKey));
+                }
+            }
+            if (!points.empty()) {
+                if (key.find("Eyebrow") != std::string::npos) {
+                    renderEyebrow(points);
+                } else if (key.find("Eyelid") != std::string::npos) {
+                    renderEyebrow(points); // Reuse eyebrow renderer for eyelids
+                }
+            }
+        } else if (key.find("mouth") != std::string::npos) {
+            // Collect points for the mouth
+            std::vector<sf::Vector2f> points(6, sf::Vector2f(0.f, 0.f)); // Initialize with 6 points at (0, 0)
+            for (int i = 1; i <= 6; ++i) {
+                std::string pointKey = key.substr(0, key.find("_p")) + "_p" + std::to_string(i);
+                if (faceConfig.find(pointKey) != faceConfig.end()) {
+                    points[i - 1] = faceConfig.at(pointKey); // Assign existing points
+                }
+            }
+            renderMouth(points);
+        }
+    }
+
+    // Draw the final composed texture on the window
     sf::Sprite sprite(texture.getTexture());
     window.draw(sprite);
 }
