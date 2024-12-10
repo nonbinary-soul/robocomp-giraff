@@ -23,35 +23,30 @@
 */
 
 
-
 #ifndef SPECIFICWORKER_H
 #define SPECIFICWORKER_H
 
-#define HIBERNATION_ENABLED
-
 #include <genericworker.h>
+#include <face_renderer.h>
+#include <face_controller.h>
 #include <globals.h>
-#include <face.h>
-#include <opencv2/opencv.hpp>
 #include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
-#include <map>
-#include <string>
 #include <mutex>
-#include <random>
 #include <thread>
+#include <map>
 #include <filesystem>
 #include <nlohmann/json.hpp>
+#include <iostream>
 #include <fstream>
 
-class SpecificWorker : public GenericWorker
-{
-Q_OBJECT
+class SpecificWorker : public GenericWorker {
+	Q_OBJECT
 public:
 	SpecificWorker(TuplePrx tprx, bool startup_check);
 	~SpecificWorker() override;
 	bool setParams(RoboCompCommonBehavior::ParameterList params) override;
 
+	// Métodos de la interfaz EmotionalMotor
 	void EmotionalMotor_expressAnger() override;
 	void EmotionalMotor_expressDisgust() override;
 	void EmotionalMotor_expressFear() override;
@@ -69,14 +64,17 @@ public slots:
 	void emergency() override;
 	void restore() override;
 	int startup_check();
-private:
 
+private:
 	bool startup_check_flag;
 
-	// screen management
-	static void initWindow() ;
+	sf::RenderWindow window;
+	FaceRenderer faceRenderer;
+	FaceController faceController;
 
-	Face face;
+	std::thread animationThread;
+	bool running;
+	void startAnimationLoop();
 };
 
-#endif
+#endif // SPECIFICWORKER_H

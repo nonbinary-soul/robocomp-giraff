@@ -18,77 +18,31 @@
  */
 #include "specificworker.h"
 
-// Function to initialize the SFML window (equivalent to pygame in Python)
-void SpecificWorker::initWindow() {
-	// Create the SFML window
-	sf::RenderWindow window(sf::VideoMode(Globals::res_x, Globals::res_y), "EBO FACE");
-	if (!window.isOpen()) {
-		std::cerr << "Error creating SFML window!" << std::endl;
-		exit(1);
-	}
-
-	sf::Event event = sf::Event();
-	while (window.isOpen()) { // heck if the window is still open
-		// Poll events
-		while (window.pollEvent(event)) {
-			if (event.type == sf::Event::Closed) window.close();
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
-		}
-
-		// clean window
-		window.clear(sf::Color::White);
-
-		// Display the image, if available
-		std::lock_guard guard(Face::shared_data.lock); // Protect shared data with a lock
-
-		if (!Face::shared_data.image.empty()) {
-			// Convert OpenCV image (BGR) to RGB
-			cv::Mat img_rgb;
-			cvtColor(Face::shared_data.image, img_rgb, cv::COLOR_BGR2RGB);
-
-			// Create a SFML image
-			sf::Image image;
-			image.create(img_rgb.cols, img_rgb.rows, img_rgb.data);
-
-			// Create a texture from the image
-			sf::Texture texture;
-			if (!texture.loadFromImage(image)) {
-				std::cerr << "Error loading texture from image!" << std::endl;
-				continue;
-			}
-
-			// Create a sprite to display the texture
-			sf::Sprite sprite(texture);
-
-			// draw the sprite
-			window.draw(sprite);
-		}
-
-		// show the window
-		window.display();
-	}
-}
-
 /**
 * \brief Default constructor
 */
 SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
-	: GenericWorker(tprx)
-{
-	this->startup_check_flag = startup_check;
+	: GenericWorker(tprx),
+	  faceRenderer(Globals::res_x, Globals::res_y),
+	  faceController(faceRenderer),
+	  running(true) {
 
-	// Uncomment if there's too many debug messages
-	// but it removes the possibility to see the messages
-	// shown in the console with qDebug()
-	//    QLoggingCategory::setFilterRules("*.debug=false\n");
+	this->startup_check_flag = startup_check;
+	window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "EBO FACE");
 }
 
 /**
 * \brief Default destructor
 */
-SpecificWorker::~SpecificWorker()
-{
-	std::cout << "Destroying SpecificWorker" << std::endl;
+
+SpecificWorker::~SpecificWorker() {
+	running = false;
+	if (animationThread.joinable()) {
+		animationThread.join();
+	}
+
+	std::cout << "SpecificWorker destroyed." << std::endl;
+
 }
 
 bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
@@ -113,46 +67,48 @@ bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
 	return true;
 }
 
-void SpecificWorker::initialize()
-{
+void SpecificWorker::initialize() {
 	std::cout << "Initialize worker" << std::endl;
-	if(this->startup_check_flag)
-	{
+
+	try {
+		std::filesystem::path jsonPath = "JSON"; // Path to the JSON folder
+
+		if (!exists(jsonPath) || !is_directory(jsonPath)) {
+			throw std::runtime_error("JSON folder not found: " + jsonPath.string());
+		}
+
+		// Iterate through all files in the JSON folder
+		for (const auto &entry : std::filesystem::directory_iterator(jsonPath)) {
+			if (entry.path().extension() == ".json") { // Only process .json files
+				std::ifstream inputFile(entry.path());
+				if (!inputFile.is_open()) {
+					std::cerr << "Error opening file: " << entry.path() << std::endl;
+					continue;
+				}
+
+				// Parse the JSON file
+				nlohmann::json jsonData;
+				inputFile >> jsonData;
+
+				// Get the emotion name (e.g., "anger") from the filename
+				std::string emotionName = entry.path().stem().string(); // Get the filename without extension
+
+				// Load the emotion into the FaceController
+				faceController.loadEmotionConfig(emotionName, jsonData);
+
+				std::cout << "Loaded emotion: " << emotionName << std::endl;
+			}
+		}
+	} catch (const std::exception &e) {
+		std::cerr << "Error loading emotion configurations: " << e.what() << std::endl;
+		return;
+	}
+
+	if (this->startup_check_flag) {
 		this->startup_check();
+	} else {
+		animationThread = std::thread(&SpecificWorker::startAnimationLoop, this);
 	}
-	else
-	{
-		#ifdef HIBERNATION_ENABLED
-			hibernationChecker.start(500);
-		#endif
-
-		this->setPeriod(STATES::Compute, 100);
-		//this->setPeriod(STATES::Emergency, 500);
-
-		this->initWindow();
-	}
-
-}
-
-void SpecificWorker::compute()
-{
-    std::cout << "Compute worker" << std::endl;
-	//computeCODE
-	//QMutexLocker locker(mutex);
-	//try
-	//{
-	//  camera_proxy->getYImage(0,img, cState, bState);
-    //    if (img.empty())
-    //        emit goToEmergency()
-	//  memcpy(image_gray.data, &img[0], m_width*m_height*sizeof(uchar));
-	//  searchTags(image_gray);
-	//}
-	//catch(const Ice::Exception &e)
-	//{
-	//  std::cout << "Error reading from Camera" << e << std::endl;
-	//}
-	
-	
 }
 
 void SpecificWorker::emergency()
@@ -162,6 +118,22 @@ void SpecificWorker::emergency()
 	//
 	//if (SUCCESSFUL)
     //  emmit goToRestore()
+}
+
+void SpecificWorker::compute() {
+	sf::Event event{};
+	while (window.pollEvent(event)) {
+		if (event.type == sf::Event::Closed ||
+			(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
+			window.close();
+			exit(0);
+			}
+	}
+
+	EmotionalMotor_expressDisgust();
+	window.clear();
+	faceRenderer.render(window);
+	window.display();
 }
 
 //Execute one when exiting to emergencyState
@@ -180,83 +152,49 @@ int SpecificWorker::startup_check()
 	return 0;
 }
 
-
-void SpecificWorker::EmotionalMotor_expressAnger()
-{
-	if (Face::emotionsConfig.contains("anger")) {
-		face.setConfig(Face::emotionsConfig["anger"]);
-	} else {
-		std::cerr << "Anger emotion not found!" << std::endl;
+void SpecificWorker::startAnimationLoop() {
+	while (running) {
+		faceController.update();
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 }
 
-void SpecificWorker::EmotionalMotor_expressDisgust()
-{
-	if (Face::emotionsConfig.contains("disgust")) {
-		face.setConfig(Face::emotionsConfig["disgust"]);
-	} else {
-		std::cerr << "Disgust emotion not found!" << std::endl;
-	}
+void SpecificWorker::EmotionalMotor_expressAnger() {
+	faceController.setEmotion("anger");
 }
 
-void SpecificWorker::EmotionalMotor_expressFear()
-{
-	if (Face::emotionsConfig.contains("fear")) {
-		face.setConfig(Face::emotionsConfig["fear"]);
-	} else {
-		std::cerr << "Fear emotion not found!" << std::endl;
-	}
+void SpecificWorker::EmotionalMotor_expressDisgust() {
+	faceController.setEmotion("disgust");
 }
 
-void SpecificWorker::EmotionalMotor_expressJoy()
-{
-	if (Face::emotionsConfig.contains("joy")) {
-		face.setConfig(Face::emotionsConfig["joy"]);
-	} else {
-		std::cerr << "Joy emotion not found!" << std::endl;
-	}
+void SpecificWorker::EmotionalMotor_expressFear() {
+	faceController.setEmotion("fear");
 }
 
-void SpecificWorker::EmotionalMotor_expressSadness()
-{
-	if (Face::emotionsConfig.contains("sadness")) {
-		face.setConfig(Face::emotionsConfig["sadness"]);
-	} else {
-		std::cerr << "Sadness emotion not found!" << std::endl;
-	}
+void SpecificWorker::EmotionalMotor_expressJoy() {
+	faceController.setEmotion("joy");
 }
 
-void SpecificWorker::EmotionalMotor_expressSurprise()
-{
-	if (Face::emotionsConfig.contains("surprise")) {
-		face.setConfig(Face::emotionsConfig["surprise"]);
-	} else {
-		std::cerr << "Surprise emotion not found!" << std::endl;
-	}
+void SpecificWorker::EmotionalMotor_expressSadness() {
+	faceController.setEmotion("sadness");
 }
 
-void SpecificWorker::EmotionalMotor_isanybodythere(bool isAny)
-{
-	cout << (isAny ? (face.setPupilFlag(true), "active") : (face.setPupilFlag(false), "inactive")) << endl;
+void SpecificWorker::EmotionalMotor_expressSurprise() {
+	faceController.setEmotion("surprise");
 }
 
-void SpecificWorker::EmotionalMotor_listening(bool setListening)
-{
-	face.setListening(setListening);
+void SpecificWorker::EmotionalMotor_isanybodythere(bool isAny) {
+	faceController.setPupilState(isAny);
 }
 
-void SpecificWorker::EmotionalMotor_talking(bool setTalk)
-{
-	face.setTalking(setTalk);
+void SpecificWorker::EmotionalMotor_listening(bool setListening) {
+	faceController.setListening(setListening);
 }
 
-void SpecificWorker::EmotionalMotor_pupposition(float x, float y)
-{
-	face.setPupX(x);
-	face.setPupY(y);
+void SpecificWorker::EmotionalMotor_talking(bool setTalk) {
+	faceController.setTalking(setTalk);
 }
 
-
-
-
-
+void SpecificWorker::EmotionalMotor_pupposition(float x, float y) {
+	faceController.setPupilPosition(x, y);
+}

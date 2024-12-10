@@ -27,6 +27,8 @@ SET ( SOURCES
   genericworker.cpp
   emotionalmotorI.cpp
   face.cpp
+  face_controller.cpp
+  face_renderer.cpp
   globals.cpp
 )
 
