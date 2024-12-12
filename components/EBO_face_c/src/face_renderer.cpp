@@ -1,12 +1,6 @@
 #include "face_renderer.h"
 
-FaceRenderer::FaceRenderer(int resolutionX, int resolutionY) {
-    // creating a renderable texture with the specified resolution
-    if (!texture.create(resolutionX, resolutionY)) {
-        throw std::runtime_error("Failed to create render texture");
-    }
-    texture.clear(sf::Color::White);
-}
+FaceRenderer::FaceRenderer(sf::RenderWindow &win) : window(win) {}
 
 void FaceRenderer::render(sf::RenderWindow &window) {
     texture.clear(sf::Color::White); // Clear the texture before rendering
@@ -61,6 +55,10 @@ void FaceRenderer::render(sf::RenderWindow &window) {
     // Draw the final composed texture on the window
     sf::Sprite sprite(texture.getTexture());
     window.draw(sprite);
+}
+
+void FaceRenderer::setBackgroundColor(const sf::Color &color) {
+    backgroundColor = color;
 }
 
 void FaceRenderer::setFaceConfig(const std::map<std::string, sf::Vector2f> &config) {

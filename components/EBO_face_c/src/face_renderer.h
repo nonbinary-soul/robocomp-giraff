@@ -4,14 +4,15 @@
 #include <SFML/Graphics.hpp>
 #include <map>
 #include <string>
-#include <stdexcept>
+#include <vector>
 
 class FaceRenderer {
 public:
-    FaceRenderer(int res_x, int res_y);
+    explicit FaceRenderer(sf::RenderWindow &window);
     void render(sf::RenderWindow &window); // renders the entire face
-    void setFaceConfig(const std::map<std::string, sf::Vector2f> &config);
+    void setBackgroundColor(const sf::Color &color);
 
+    void setFaceConfig(const std::map<std::string, sf::Vector2f> &config);
     // rendering specific facial parts
     void renderEye(const sf::Vector2f &center, float radiusX, float radiusY);
     void renderPupil(const sf::Vector2f &center, float radius);
@@ -19,7 +20,10 @@ public:
     void renderEyebrow(const std::vector<sf::Vector2f> &points);
 
 private:
+    sf::RenderWindow &window;
     sf::RenderTexture texture;
+    sf::Color backgroundColor = sf::Color::White;
+
     std::map<std::string, sf::Vector2f> faceConfig;
 };
 

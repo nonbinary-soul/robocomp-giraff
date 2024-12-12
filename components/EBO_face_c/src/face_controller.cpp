@@ -42,7 +42,7 @@ void FaceController::update() {
     // Interpolate configurations if needed
     if (interpolationFactor < 1.0f) {
         interpolateConfigs();
-        interpolationFactor += 0.05f; // Adjust the speed of interpolation
+        interpolationFactor += Globals::OFFSET; // Adjust the speed of interpolation
     }
 
     // check if the map has been loaded correctly
@@ -71,15 +71,15 @@ void FaceController::update() {
 
 void FaceController::interpolateConfigs() {
     for (const auto &[key, target] : targetConfig) {
-        auto &current = currentConfig[key]; // Get current config for the same key
-        current.x = current.x + (target.x - current.x) * interpolationFactor;
-        current.y = current.y + (target.y - current.y) * interpolationFactor;
+        auto &current = currentConfig[key];
+        current.x += (target.x - current.x) * Globals::interpolation_speed;
+        current.y += (target.y - current.y) * Globals::interpolation_speed;
     }
 }
 
 void FaceController::loadEmotionConfig(const std::string &emotion, const nlohmann::json &jsonData) {
     std::map<std::string, sf::Vector2f> config;
-    float fact_x = Globals::fact_x; // Factores globales de escala
+    float fact_x = Globals::fact_x;
     float fact_y = Globals::fact_y;
 
     for (auto &[partName, partData] : jsonData.items()) {

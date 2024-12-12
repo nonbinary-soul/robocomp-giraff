@@ -23,12 +23,12 @@
 */
 SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
 	: GenericWorker(tprx),
-	  faceRenderer(Globals::res_x, Globals::res_y),
+      window(sf::VideoMode(Globals::res_x, Globals::res_y), "EBO FACE", sf::Style::None),
+	  faceRenderer(window),
 	  faceController(faceRenderer),
 	  running(true) {
 
 	this->startup_check_flag = startup_check;
-	window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "EBO FACE");
 }
 
 /**
@@ -121,33 +121,43 @@ void SpecificWorker::emergency()
 }
 
 void SpecificWorker::compute() {
+	if (!window.isOpen()) {
+		window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
+	}
+
+	std::cout << "Real window dimensions: " << window.getSize().x << "x" << window.getSize().y << std::endl;
+
 	static bool toggle = true; // Toggle between emotions
 	static sf::Clock emotionTimer; // Timer to switch emotions every few seconds
 
-	sf::Event event{};
-	while (window.pollEvent(event)) {
-		if (event.type == sf::Event::Closed ||
-			(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
-			window.close();
-			exit(0);
-			}
-	}
+    while (window.isOpen()) {
 
-	// Switch emotions every 3 seconds
-	if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
-		if (toggle) {
-			EmotionalMotor_expressAnger(); // Switch to "anger"
-		} else {
-			EmotionalMotor_expressDisgust(); // Switch to "disgust"
+    	// if some key is pressed, then check what to do
+    	sf::Event event{};
+    	while (window.pollEvent(event)){
+    		if (event.type == sf::Event::Closed ||
+				(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
+    			window.close();
+    			exit(0);
+    		}
 		}
-		toggle = !toggle;
-		emotionTimer.restart(); // Reset the timer
-	}
 
-	// Render the current face configuration
-	window.clear();
-	faceRenderer.render(window);
-	window.display();
+		// while window is open, show emotion
+		if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
+			if (toggle) {
+				EmotionalMotor_expressAnger();
+			} else {
+				EmotionalMotor_expressDisgust();
+			}
+			toggle = !toggle;
+			emotionTimer.restart();
+		}
+
+    	// render the current face configuration
+    	window.clear();
+    	faceRenderer.render(window);
+    	window.display();
+    }
 }
 
 //Execute one when exiting to emergencyState

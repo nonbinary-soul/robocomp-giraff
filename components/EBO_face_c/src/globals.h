@@ -12,6 +12,7 @@ public:
     static const float fact_x;
     static const float fact_y;
     static const float OFFSET;
+    static const float interpolation_speed;
 
     // colors
     static const cv::Scalar WHITE;
