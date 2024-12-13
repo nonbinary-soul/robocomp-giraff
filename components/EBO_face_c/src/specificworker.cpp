@@ -107,6 +107,8 @@ void SpecificWorker::initialize() {
 	if (this->startup_check_flag) {
 		this->startup_check();
 	} else {
+		this->setPeriod(STATES::Compute, 100);
+		//this->setPeriod(STATES::Emergency, 500);
 		animationThread = std::thread(&SpecificWorker::startAnimationLoop, this);
 	}
 }
@@ -121,43 +123,41 @@ void SpecificWorker::emergency()
 }
 
 void SpecificWorker::compute() {
-	if (!window.isOpen()) {
-		window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
-	}
-
-	std::cout << "Real window dimensions: " << window.getSize().x << "x" << window.getSize().y << std::endl;
-
-	static bool toggle = true; // Toggle between emotions
-	static sf::Clock emotionTimer; // Timer to switch emotions every few seconds
-
-    while (window.isOpen()) {
-
-    	// if some key is pressed, then check what to do
-    	sf::Event event{};
-    	while (window.pollEvent(event)){
-    		if (event.type == sf::Event::Closed ||
-				(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
-    			window.close();
-    			exit(0);
-    		}
+	try {
+		if (!window.isOpen()) {
+			window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
 		}
 
-		// while window is open, show emotion
-		if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
-			if (toggle) {
-				EmotionalMotor_expressAnger();
-			} else {
-				EmotionalMotor_expressDisgust();
+		// Your existing compute logic
+		static sf::Clock emotionTimer;
+		static bool toggle = true;
+
+		while (window.isOpen()) {
+			sf::Event event{};
+			while (window.pollEvent(event)) {
+				if (event.type == sf::Event::Closed) {
+					window.close();
+				}
 			}
-			toggle = !toggle;
-			emotionTimer.restart();
-		}
 
-    	// render the current face configuration
-    	window.clear();
-    	faceRenderer.render(window);
-    	window.display();
-    }
+			// Switch emotions
+			if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
+				if (toggle) {
+					EmotionalMotor_expressJoy();
+				} else {
+					EmotionalMotor_expressDisgust();
+				}
+				toggle = !toggle;
+				emotionTimer.restart();
+			}
+
+			// Render the face
+			faceRenderer.render();
+			window.display();
+		}
+	} catch (const std::exception &e) {
+		std::cerr << "Exception caught in compute: " << e.what() << std::endl;
+	}
 }
 
 //Execute one when exiting to emergencyState

@@ -18,8 +18,7 @@ public:
     void setTalking(bool talking);
     void setListening(bool listening);
     void update(); // Update the animation state
-    void loadEmotionConfig(const std::string &emotion, const nlohmann::json &jsonData); // Load configuration from JSON
-
+    void loadEmotionConfig(const std::string &emotion, const nlohmann::json &jsonData);
 private:
     FaceRenderer &renderer;
     std::map<std::string, std::map<std::string, sf::Vector2f>> emotionsConfig;

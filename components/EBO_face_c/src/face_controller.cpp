@@ -28,12 +28,12 @@ void FaceController::setPupilState(bool active) {
 
 void FaceController::setTalking(bool talking) {
     std::lock_guard<std::mutex> lock(configMutex);
-    isTalking = talking; // Update the talking state
+    isTalking = talking;
 }
 
 void FaceController::setListening(bool listening) {
     std::lock_guard<std::mutex> lock(configMutex);
-    isListening = listening; // Update the listening state
+    isListening = listening;
 }
 
 void FaceController::update() {
@@ -42,13 +42,10 @@ void FaceController::update() {
     // Interpolate configurations if needed
     if (interpolationFactor < 1.0f) {
         interpolateConfigs();
-        interpolationFactor += Globals::OFFSET; // Adjust the speed of interpolation
+        interpolationFactor += Globals::OFFSET;
+        if (interpolationFactor > 1.0f)
+            interpolationFactor = 1.0f;
     }
-
-    // check if the map has been loaded correctly
-    // for (const auto &[key, value] : currentConfig) {
-    //    std::cout << "Config: " << key << " -> (" << value.x << ", " << value.y << ")\n";
-    //}
 
     // Update face rendering
     renderer.setFaceConfig(currentConfig);
@@ -78,36 +75,55 @@ void FaceController::interpolateConfigs() {
 }
 
 void FaceController::loadEmotionConfig(const std::string &emotion, const nlohmann::json &jsonData) {
+    std::cout << "Loading emotion: " << emotion << "..." << std::endl;
+
     std::map<std::string, sf::Vector2f> config;
     float fact_x = Globals::fact_x;
     float fact_y = Globals::fact_y;
 
+    std::cout << "Scaling factors: fact_x = " << fact_x << ", fact_y = " << fact_y << std::endl;
+
     for (auto &[partName, partData] : jsonData.items()) {
         sf::Vector2f partPosition;
 
+        std::cout << "Processing part: " << partName << std::endl;
+
+        // Process center
         if (partData.contains("center")) {
             partPosition.x = partData["center"]["x"].get<float>() * fact_x;
             partPosition.y = partData["center"]["y"].get<float>() * fact_y;
             config[partName + "_center"] = partPosition;
+
+            std::cout << "  Center: "
+                      << "Original (x=" << partData["center"]["x"] << ", y=" << partData["center"]["y"] << ")"
+                      << " -> Scaled (x=" << partPosition.x << ", y=" << partPosition.y << ")" << std::endl;
         }
 
+        // Process points
         std::vector<std::string> points = {"p1", "p2", "p3", "p4", "p5", "p6"};
         for (const std::string &point : points) {
             if (partData.contains(point)) {
                 partPosition.x = partData[point]["x"].get<float>() * fact_x;
                 partPosition.y = partData[point]["y"].get<float>() * fact_y;
                 config[partName + "_" + point] = partPosition;
+
+                std::cout << "  Point " << point << ": "
+                          << "Original (x=" << partData[point]["x"] << ", y=" << partData[point]["y"] << ")"
+                          << " -> Scaled (x=" << partPosition.x << ", y=" << partPosition.y << ")" << std::endl;
             }
         }
 
-        if (partData.contains("r1")) {
-            config[partName + "_r1"] = {partData["r1"]["value"].get<float>() * fact_x, 0};
-        }
-        if (partData.contains("r2")) {
-            config[partName + "_r2"] = {partData["r2"]["value"].get<float>() * fact_x, 0};
-        }
-        if (partData.contains("r3")) {
-            config[partName + "_r3"] = {partData["r3"]["value"].get<float>() * fact_x, 0};
+        // Process radii
+        std::vector<std::string> radii = {"r1", "r2", "r3"};
+        for (const auto &radius : radii) {
+            if (partData.contains(radius)) {
+                float scaledRadius = partData[radius]["value"].get<float>() * fact_x;
+                config[partName + "_" + radius] = {scaledRadius, 0};
+
+                std::cout << "  Radius " << radius << ": "
+                          << "Original (value=" << partData[radius]["value"] << ")"
+                          << " -> Scaled (value=" << scaledRadius << ")" << std::endl;
+            }
         }
     }
 
