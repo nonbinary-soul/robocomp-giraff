@@ -71,7 +71,7 @@ void FaceRenderer::render() {
                     renderEyebrow(points); // Reuse eyebrow renderer for eyelids
                 }
             }
-        } else if (key.find("mouth") != std::string::npos) {
+        } else if (key.find("Mouth") != std::string::npos) {
             // Collect points for the mouth
             std::vector<sf::Vector2f> points(6, sf::Vector2f(0.f, 0.f));
             for (int i = 1; i <= 6; ++i) {
@@ -135,7 +135,7 @@ void FaceRenderer::renderEyebrow(const std::vector<sf::Vector2f> &points) {
 
     sf::VertexArray eyebrow(sf::TrianglesStrip, curve.size() * 2);
 
-    float thickness = 5.0f;  // Grosor de la ceja
+    float thickness = 5.0f;
     for (size_t i = 0; i < curve.size(); ++i) {
         sf::Vector2f direction = (i < curve.size() - 1) ?
                                  curve[i + 1] - curve[i] :
@@ -143,7 +143,7 @@ void FaceRenderer::renderEyebrow(const std::vector<sf::Vector2f> &points) {
 
         sf::Vector2f normal(-direction.y, direction.x);
         float length = std::sqrt(normal.x * normal.x + normal.y * normal.y);
-        normal /= length;  // Normaliza el vector
+        normal /= length;
 
         eyebrow[i * 2].position = curve[i] + normal * thickness;
         eyebrow[i * 2 + 1].position = curve[i] - normal * thickness;

@@ -36,13 +36,12 @@ SpecificWorker::SpecificWorker(TuplePrx tprx, bool startup_check)
 */
 
 SpecificWorker::~SpecificWorker() {
-	running = false;
+	running = false; // check to false to finish the thread
 	if (animationThread.joinable()) {
-		animationThread.join();
+		animationThread.join(); // waiting the thread to finish
 	}
 
 	std::cout << "SpecificWorker destroyed." << std::endl;
-
 }
 
 bool SpecificWorker::setParams(RoboCompCommonBehavior::ParameterList params)
@@ -71,34 +70,8 @@ void SpecificWorker::initialize() {
 	std::cout << "Initialize worker" << std::endl;
 
 	try {
-		std::filesystem::path jsonPath = "JSON"; // Path to the JSON folder
-
-		if (!exists(jsonPath) || !is_directory(jsonPath)) {
-			throw std::runtime_error("JSON folder not found: " + jsonPath.string());
-		}
-
-		// Iterate through all files in the JSON folder
-		for (const auto &entry : std::filesystem::directory_iterator(jsonPath)) {
-			if (entry.path().extension() == ".json") { // Only process .json files
-				std::ifstream inputFile(entry.path());
-				if (!inputFile.is_open()) {
-					std::cerr << "Error opening file: " << entry.path() << std::endl;
-					continue;
-				}
-
-				// Parse the JSON file
-				nlohmann::json jsonData;
-				inputFile >> jsonData;
-
-				// Get the emotion name (e.g., "anger") from the filename
-				std::string emotionName = entry.path().stem().string(); // Get the filename without extension
-
-				// Load the emotion into the FaceController
-				faceController.loadEmotionConfig(emotionName, jsonData);
-
-				std::cout << "Loaded emotion: " << emotionName << std::endl;
-			}
-		}
+		// loading all emotions from a directory
+		faceController.loadAllEmotions("emotions_json");
 	} catch (const std::exception &e) {
 		std::cerr << "Error loading emotion configurations: " << e.what() << std::endl;
 		return;
@@ -123,12 +96,13 @@ void SpecificWorker::emergency()
 }
 
 void SpecificWorker::compute() {
+	std::cout << "Compute worker" << std::endl;
+
 	try {
 		if (!window.isOpen()) {
 			window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
 		}
 
-		// Your existing compute logic
 		static sf::Clock emotionTimer;
 		static bool toggle = true;
 
@@ -143,8 +117,10 @@ void SpecificWorker::compute() {
 			// Switch emotions
 			if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
 				if (toggle) {
+					std::cout << "expressing joy..." << std::endl;
 					EmotionalMotor_expressJoy();
 				} else {
+					std::cout << "expressing disgust..." << std::endl;
 					EmotionalMotor_expressDisgust();
 				}
 				toggle = !toggle;
@@ -178,8 +154,12 @@ int SpecificWorker::startup_check()
 
 void SpecificWorker::startAnimationLoop() {
 	while (running) {
-		faceController.update();
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		// checking if we need to update the animation
+		if (faceController.shouldUpdate()) {
+			faceController.update();
+			faceController.disableUpdate();  // Reset the flag after the update is done
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));  // Check every 50ms or adjust as needed
 	}
 }
 

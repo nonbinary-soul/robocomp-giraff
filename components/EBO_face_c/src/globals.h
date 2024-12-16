@@ -11,8 +11,8 @@ public:
     static const int res_y;
     static const float fact_x;
     static const float fact_y;
-    static const float OFFSET;
     static const float interpolation_speed;
+    static const float progress_increment;
 
     // colors
     static const cv::Scalar WHITE;
