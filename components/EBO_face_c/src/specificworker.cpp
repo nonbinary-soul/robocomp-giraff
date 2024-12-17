@@ -128,7 +128,7 @@ void SpecificWorker::compute() {
 			}
 
 			// Render the face
-			faceRenderer.render();
+			faceRenderer.renderFace();
 			window.display();
 		}
 	} catch (const std::exception &e) {

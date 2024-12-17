@@ -34,50 +34,65 @@ std::vector<sf::Vector2f> FaceRenderer::calculateBezierCurve(const std::vector<s
     return bezierPoints;
 }
 
-void FaceRenderer::render() {
-    window.clear(backgroundColor);
+void FaceRenderer::renderFace() {
+    // Clear the window with the background color
+    window.clear(background_color);
 
-    // Render each facial feature based on faceConfig
-    for (const auto &[key, value] : faceConfig) {
-        if (key.find("_center") != std::string::npos) {
-            // Handle eyes or pupils
-            std::string baseKey = key.substr(0, key.find("_center"));
-            if (key.find("Eye") != std::string::npos) {
-                if (faceConfig.find(baseKey + "_r1") != faceConfig.end() &&
-                    faceConfig.find(baseKey + "_r2") != faceConfig.end()) {
-                    float radiusX = faceConfig.at(baseKey + "_r1").x;
-                    float radiusY = faceConfig.at(baseKey + "_r2").x;
-                    renderEye(value, radiusX, radiusY);
+    // Render each facial feature based on face_config
+    for (const auto &[part_name, attribute] : face_config) {
+        if (part_name.find("_center") != std::string::npos) {
+            // eyes and pupils
+            std::string base_key = part_name.substr(0, part_name.find("_center"));
+
+            if (part_name.find("eye") != std::string::npos) {
+                // render eyes if the radius values exist
+                if (face_config.find(base_key + "_r1") != face_config.end() &&
+                    face_config.find(base_key + "_r2") != face_config.end()) {
+                    float radius_x = face_config.at(base_key + "_r1").x;
+                    float radius_y = face_config.at(base_key + "_r2").x;
+                    renderEye(attribute, radius_x, radius_y);
                 }
-            } else if (key.find("Pupil") != std::string::npos) {
-                if (faceConfig.find(baseKey + "_r3") != faceConfig.end()) {
-                    float radius = faceConfig.at(baseKey + "_r3").x;
-                    renderPupil(value, radius);
+            } else if (part_name.find("pupil") != std::string::npos) {
+                // render pupils if the radius value exists
+                if (face_config.find(base_key + "_r3") != face_config.end()) {
+                    float radius = face_config.at(base_key + "_r3").x;
+                    renderPupil(attribute, radius);
+                }
+            } else if (part_name.find("tongue") != std::string::npos) {
+                if (face_config.find(base_key + "_r1") != face_config.end() &&
+                    face_config.find(base_key + "_r2") != face_config.end()) {
+                    float radius_x = face_config.at(base_key + "_r1").x;
+                    float radius_y = face_config.at(base_key + "_r2").x;
+                    renderTongue(attribute, radius_x, radius_y);
                 }
             }
-        } else if (key.find("Eyebrow") != std::string::npos || key.find("Eyelid") != std::string::npos) {
-            // Collect points for eyebrows or eyelids
+        } else if (part_name.find("eyebrow") != std::string::npos ||
+                   part_name.find("eyelid") != std::string::npos ||
+                   part_name.find("cheek") != std::string::npos ||
+                   part_name.find("tongue") != std::string::npos
+                   ) {
+            // Collect points
             std::vector<sf::Vector2f> points;
             for (int i = 1; i <= 4; ++i) {
-                std::string pointKey = key.substr(0, key.find("_p")) + "_p" + std::to_string(i);
-                if (faceConfig.find(pointKey) != faceConfig.end()) {
-                    points.push_back(faceConfig.at(pointKey));
+                std::string point_key = part_name.substr(0, part_name.find("_p")) + "_p" + std::to_string(i);
+                if (face_config.find(point_key) != face_config.end()) {
+                    points.push_back(face_config.at(point_key));
                 }
             }
+
+            // render the correct part
             if (!points.empty()) {
-                if (key.find("Eyebrow") != std::string::npos) {
-                    renderEyebrow(points);
-                } else if (key.find("Eyelid") != std::string::npos) {
-                    renderEyebrow(points); // Reuse eyebrow renderer for eyelids
-                }
+                if (part_name.find("eyebrow") != std::string::npos) renderEyebrow(points);
+                else if (part_name.find("eyelid") != std::string::npos) renderEyelid(points);
+                else if (part_name.find("cheek") != std::string::npos) renderCheek(points);
             }
-        } else if (key.find("Mouth") != std::string::npos) {
+        } else if (part_name.find("mouth") != std::string::npos) {
             // Collect points for the mouth
             std::vector<sf::Vector2f> points(6, sf::Vector2f(0.f, 0.f));
             for (int i = 1; i <= 6; ++i) {
-                std::string pointKey = key.substr(0, key.find("_p")) + "_p" + std::to_string(i);
-                if (faceConfig.find(pointKey) != faceConfig.end()) {
-                    points[i - 1] = faceConfig.at(pointKey);
+                std::string point_key = part_name.substr(0, part_name.find("_p")) + "_p" + std::to_string(i);
+                if (face_config.find(point_key) != face_config.end()) {
+                    points[i - 1] = face_config.at(point_key);
                 }
             }
             renderMouth(points);
@@ -86,70 +101,107 @@ void FaceRenderer::render() {
 }
 
 void FaceRenderer::setBackgroundColor(const sf::Color &color) {
-    backgroundColor = color;
+    background_color = color;
 }
 
 void FaceRenderer::setFaceConfig(const std::map<std::string, sf::Vector2f> &config) {
-    faceConfig = config;
+    face_config = config;
 }
 
-void FaceRenderer::renderEye(const sf::Vector2f &center, float radiusX, float radiusY) {
-    sf::CircleShape eye(radiusX);
-    eye.setFillColor(sf::Color::White);
-    eye.setOutlineColor(sf::Color::Black);
-    eye.setOutlineThickness(1.5f);
-    eye.setPosition(center.x - radiusX, center.y - radiusY);
-    eye.setScale(1.f, radiusY / radiusX);
+void FaceRenderer::renderEyebrow(const std::vector<sf::Vector2f> &points) {
+    if (points.size() < 4) return;
+
+    sf::ConvexShape eyebrow;
+    eyebrow.setPointCount(points.size());
+
+    // asigning points to ConvexShape
+    for (size_t i = 0; i < points.size(); ++i) {
+        eyebrow.setPoint(i, points[i]);
+    }
+
+    eyebrow.setFillColor(sf::Color::Black);
+
+    // Dibujar la ceja en la ventana
+    window.draw(eyebrow);
+}
+
+void FaceRenderer::renderEyelid(const std::vector<sf::Vector2f> &points) {
+    if (points.size() < 4) return;
+
+    // Calcular la curva Bézier
+    std::vector<sf::Vector2f> curve = calculateBezierCurve(points, 20);
+
+    // Usar VertexArray para dibujar una línea suave (LinesStrip)
+    sf::VertexArray eyelid(sf::LinesStrip, curve.size());
+
+    for (size_t i = 0; i < curve.size(); ++i) {
+        eyelid[i].position = curve[i];
+        eyelid[i].color = sf::Color::Black; // Color del párpado
+    }
+
+    window.draw(eyelid);
+}
+
+void FaceRenderer::renderEye(const sf::Vector2f &center, float radius_x, float radius_y) {
+    sf::CircleShape eye(radius_x);
+    eye.setFillColor(sf::Color::Black);
+    eye.setOrigin(radius_x, radius_y);
+    eye.setPosition(center);
+    eye.setScale(1.f, radius_y / radius_x); // making the ellipse
 
     window.draw(eye);
 }
 
 void FaceRenderer::renderPupil(const sf::Vector2f &center, float radius) {
     sf::CircleShape pupil(radius);
-    pupil.setFillColor(sf::Color::Black);
-    pupil.setPosition(center.x - radius, center.y - radius);
+    pupil.setFillColor(sf::Color::White);
+    pupil.setOrigin(radius, radius);
+    pupil.setPosition(center);
 
     window.draw(pupil);
 }
 
 void FaceRenderer::renderMouth(const std::vector<sf::Vector2f> &points) {
-    if (points.size() < 4) return;
+    if (points.size() != 6) return; // Verifica que haya exactamente 6 puntos
 
-    // Generate smooth points using Bézier
-    std::vector<sf::Vector2f> curve = calculateBezierCurve(points, 100);
+    sf::ConvexShape mouth;
+    mouth.setPointCount(points.size());
 
-    // Create a VertexArray to draw the curve
-    sf::VertexArray mouth(sf::LineStrip, curve.size());
-    for (size_t i = 0; i < curve.size(); ++i) {
-        mouth[i].position = curve[i];
-        mouth[i].color = sf::Color::Black;
+    for (size_t i = 0; i < points.size(); ++i) {
+        mouth.setPoint(i, points[i]);
     }
+
+    mouth.setFillColor(sf::Color::Black);
 
     window.draw(mouth);
 }
 
-void FaceRenderer::renderEyebrow(const std::vector<sf::Vector2f> &points) {
-    if (points.size() < 3) return;
+void FaceRenderer::renderTongue(const sf::Vector2f &center, float radius_x, float radius_y) {
+    sf::CircleShape tongue(radius_x);
 
-    std::vector<sf::Vector2f> curve = calculateBezierCurve(points, 30);
+    tongue.setFillColor(sf::Color(255, 105, 180));
+    tongue.setOrigin(radius_x, radius_x);
+    tongue.setPosition(center);
+    tongue.setScale(1.0f, radius_y / radius_x); // ellipse
 
-    sf::VertexArray eyebrow(sf::TrianglesStrip, curve.size() * 2);
+    window.draw(tongue);
+}
 
-    float thickness = 5.0f;
-    for (size_t i = 0; i < curve.size(); ++i) {
-        sf::Vector2f direction = (i < curve.size() - 1) ?
-                                 curve[i + 1] - curve[i] :
-                                 curve[i] - curve[i - 1];
+void FaceRenderer::renderCheek(const std::vector<sf::Vector2f> &points) {
+    if (points.size() != 4) return;
 
-        sf::Vector2f normal(-direction.y, direction.x);
-        float length = std::sqrt(normal.x * normal.x + normal.y * normal.y);
-        normal /= length;
+    sf::ConvexShape cheek;
+    cheek.setPointCount(points.size());
 
-        eyebrow[i * 2].position = curve[i] + normal * thickness;
-        eyebrow[i * 2 + 1].position = curve[i] - normal * thickness;
-        eyebrow[i * 2].color = sf::Color::Black;
-        eyebrow[i * 2 + 1].color = sf::Color::Black;
+    for (size_t i = 0; i < points.size(); ++i) {
+        cheek.setPoint(i, points[i]);
     }
 
-    window.draw(eyebrow);
+    // color and transparency
+    sf::Color cheekColor = sf::Color(255, 182, 193);
+    cheekColor.a = 100;
+
+    cheek.setFillColor(cheekColor);
+
+    window.draw(cheek);
 }

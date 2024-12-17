@@ -21,7 +21,6 @@ void FaceController::setEmotion(const std::string &emotion) {
 
     auto it = emotionsConfig.find(emotion);
     if (it != emotionsConfig.end()) {
-        std::cout << "Emotion found." << std::endl;
         targetConfig = it->second;
         interpolation_progress = 0.0f; // allows to init the interpolation process and change the face
         requestUpdate();
@@ -145,33 +144,35 @@ void FaceController::parseEmotionJSON(const std::string &emotionName, const nloh
     float fact_y = Globals::fact_y;
 
     // iterating over each part and its attributes
-    for (const auto &[part, attributes] : jsonData.items()) {
+    for (const auto &[part, attribute] : jsonData.items()) {
         sf::Vector2f coordinates;
 
+        std::string part_name = Globals::to_snake_case(part);
+
         // processing the center
-        if (attributes.contains("center")) {
-            coordinates.x = attributes["center"]["x"].get<float>() * fact_x;
-            coordinates.y = attributes["center"]["y"].get<float>() * fact_y;
-            config[part + "_center"] = coordinates;
+        if (attribute.contains("center")) {
+            coordinates.x = attribute["center"]["x"].get<float>() * fact_x;
+            coordinates.y = attribute["center"]["y"].get<float>() * fact_y;
+            config[part_name + "_center"] = coordinates;
         }
 
         // processing the points
         std::vector<std::string> points = {"p1", "p2", "p3", "p4", "p5", "p6"};
         for (const std::string &point : points) {
-            if (attributes.contains(point)) {
-                coordinates.x = attributes[point]["x"].get<float>() * fact_x;
-                coordinates.y = attributes[point]["y"].get<float>() * fact_y;
-                config[part + "_" + point] = coordinates;
+            if (attribute.contains(point)) {
+                coordinates.x = attribute[point]["x"].get<float>() * fact_x;
+                coordinates.y = attribute[point]["y"].get<float>() * fact_y;
+                config[part_name + "_" + point] = coordinates;
             }
         }
 
         // processing the radii
         std::vector<std::string> radii = {"r1", "r2", "r3"};
         for (const auto &radius : radii) {
-            if (attributes.contains(radius)) {
-                coordinates.x = attributes[radius]["value"].get<float>() * fact_x;
+            if (attribute.contains(radius)) {
+                coordinates.x = attribute[radius]["value"].get<float>() * fact_x;
                 coordinates.y = 0;
-                config[part + "_" + radius] = coordinates;
+                config[part_name + "_" + radius] = coordinates;
             }
         }
     }

@@ -46,7 +46,6 @@ public:
 	~SpecificWorker() override;
 	bool setParams(RoboCompCommonBehavior::ParameterList params) override;
 
-	// Métodos de la interfaz EmotionalMotor
 	void EmotionalMotor_expressAnger() override;
 	void EmotionalMotor_expressDisgust() override;
 	void EmotionalMotor_expressFear() override;
