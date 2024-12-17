@@ -83,7 +83,7 @@ void FaceRenderer::renderFace() {
             // render the correct part
             if (!points.empty()) {
                 if (part_name.find("eyebrow") != std::string::npos) renderEyebrow(points);
-                else if (part_name.find("eyelid") != std::string::npos) renderEyelid(points);
+                //else if (part_name.find("eyelid") != std::string::npos) renderEyelid(points);
                 else if (part_name.find("cheek") != std::string::npos) renderCheek(points);
             }
         } else if (part_name.find("mouth") != std::string::npos) {
@@ -128,15 +128,13 @@ void FaceRenderer::renderEyebrow(const std::vector<sf::Vector2f> &points) {
 void FaceRenderer::renderEyelid(const std::vector<sf::Vector2f> &points) {
     if (points.size() < 4) return;
 
-    // Calcular la curva Bézier
     std::vector<sf::Vector2f> curve = calculateBezierCurve(points, 20);
 
-    // Usar VertexArray para dibujar una línea suave (LinesStrip)
     sf::VertexArray eyelid(sf::LinesStrip, curve.size());
 
     for (size_t i = 0; i < curve.size(); ++i) {
         eyelid[i].position = curve[i];
-        eyelid[i].color = sf::Color::Black; // Color del párpado
+        eyelid[i].color = sf::Color::Black;
     }
 
     window.draw(eyelid);
@@ -161,20 +159,28 @@ void FaceRenderer::renderPupil(const sf::Vector2f &center, float radius) {
     window.draw(pupil);
 }
 
-void FaceRenderer::renderMouth(const std::vector<sf::Vector2f> &points) {
-    if (points.size() != 6) return; // Verifica que haya exactamente 6 puntos
+void FaceRenderer::renderMouth(const std::vector<sf::Vector2f> &controlPoints) {
+    if (controlPoints.size() != 6) return; // Asegura que haya exactamente 6 puntos de control
 
+    const int segments = 30; // Número de segmentos para la curva de Bézier (mayor = más suave)
+    std::vector<sf::Vector2f> bezierPoints = calculateBezierCurve(controlPoints, segments);
+
+    // Crear un ConvexShape para dibujar la boca rellena
     sf::ConvexShape mouth;
-    mouth.setPointCount(points.size());
+    mouth.setPointCount(bezierPoints.size());
 
-    for (size_t i = 0; i < points.size(); ++i) {
-        mouth.setPoint(i, points[i]);
+    // Asignar los puntos calculados a la forma
+    for (size_t i = 0; i < bezierPoints.size(); ++i) {
+        mouth.setPoint(i, bezierPoints[i]);
     }
 
+    // Configurar el color de relleno
     mouth.setFillColor(sf::Color::Black);
 
+    // Dibujar la boca
     window.draw(mouth);
 }
+
 
 void FaceRenderer::renderTongue(const sf::Vector2f &center, float radius_x, float radius_y) {
     sf::CircleShape tongue(radius_x);
