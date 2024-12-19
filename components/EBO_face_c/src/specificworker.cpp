@@ -101,9 +101,12 @@ void SpecificWorker::compute() {
 	try {
 		if (!window.isOpen()) {
 			window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
+			window.setFramerateLimit(60);
 		}
 
 		static sf::Clock emotionTimer;
+		static sf::Clock fpsClock;
+		static int frameCount = 0;
 		static bool toggle = true;
 
 		while (window.isOpen()) {
@@ -130,6 +133,13 @@ void SpecificWorker::compute() {
 			// Render the face
 			faceRenderer.renderFace();
 			window.display();
+
+			frameCount++;
+			if (fpsClock.getElapsedTime().asSeconds() >= 1.0f) {
+				std::cout << "FPS: " << frameCount << std::endl;
+				frameCount = 0;
+				fpsClock.restart();
+			}
 		}
 	} catch (const std::exception &e) {
 		std::cerr << "Exception caught in compute: " << e.what() << std::endl;
@@ -157,7 +167,7 @@ void SpecificWorker::startAnimationLoop() {
 		// checking if we need to update the animation
 		if (faceController.shouldUpdate()) {
 			faceController.update();
-			faceController.disableUpdate();  // Reset the flag after the update is done
+			faceController.disableUpdate();  // resetting flag after update is done
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));  // Check every 50ms or adjust as needed
 	}

@@ -2,32 +2,29 @@
 
 FaceRenderer::FaceRenderer(sf::RenderWindow &win) : window(win) {}
 
-// Calculate a single Bézier point between two points
-sf::Vector2f interpolate(const sf::Vector2f &p1, const sf::Vector2f &p2, float t) {
+sf::Vector2f FaceRenderer::interpolate(const sf::Vector2f &p1, const sf::Vector2f &p2, float interpolationFactor) {
     return sf::Vector2f(
-        p1.x + (p2.x - p1.x) * t,
-        p1.y + (p2.y - p1.y) * t
+        p1.x + (p2.x - p1.x) * interpolationFactor,
+        p1.y + (p2.y - p1.y) * interpolationFactor
     );
 }
 
-// De Casteljau algorithm for Bézier curve
 std::vector<sf::Vector2f> FaceRenderer::calculateBezierCurve(const std::vector<sf::Vector2f> &controlPoints, int segments) {
     std::vector<sf::Vector2f> bezierPoints;
+    bezierPoints.reserve(segments + 1);
 
     for (int step = 0; step <= segments; ++step) {
-        float t = static_cast<float>(step) / segments;
+        float curvePosition = static_cast<float>(step) / segments;
+
         std::vector<sf::Vector2f> tempPoints = controlPoints;
 
-        // Apply De Casteljau's algorithm
-        while (tempPoints.size() > 1) {
-            std::vector<sf::Vector2f> nextLevel;
+        for (size_t level = 1; level < controlPoints.size(); ++level) {
             for (size_t i = 0; i < tempPoints.size() - 1; ++i) {
-                nextLevel.push_back(interpolate(tempPoints[i], tempPoints[i + 1], t));
+                tempPoints[i] = interpolate(tempPoints[i], tempPoints[i + 1], curvePosition);
             }
-            tempPoints = nextLevel;
+            tempPoints.resize(tempPoints.size() - 1);
         }
 
-        // The last point is the result for this value of t
         bezierPoints.push_back(tempPoints[0]);
     }
 
@@ -35,7 +32,8 @@ std::vector<sf::Vector2f> FaceRenderer::calculateBezierCurve(const std::vector<s
 }
 
 void FaceRenderer::renderFace() {
-    // Clear the window with the background color
+    std::lock_guard<std::mutex> lock(face_config_mutex);
+
     window.clear(background_color);
 
     // Render each facial feature based on face_config
@@ -105,6 +103,7 @@ void FaceRenderer::setBackgroundColor(const sf::Color &color) {
 }
 
 void FaceRenderer::setFaceConfig(const std::map<std::string, sf::Vector2f> &config) {
+    std::lock_guard<std::mutex> lock(face_config_mutex);
     face_config = config;
 }
 
@@ -160,9 +159,9 @@ void FaceRenderer::renderPupil(const sf::Vector2f &center, float radius) {
 }
 
 void FaceRenderer::renderMouth(const std::vector<sf::Vector2f> &controlPoints) {
-    if (controlPoints.size() != 6) return; // Asegura que haya exactamente 6 puntos de control
+    if (controlPoints.size() != 6) return;
 
-    const int segments = 30; // Número de segmentos para la curva de Bézier (mayor = más suave)
+    const int segments = 50;
     std::vector<sf::Vector2f> bezierPoints = calculateBezierCurve(controlPoints, segments);
 
     // Crear un ConvexShape para dibujar la boca rellena

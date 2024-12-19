@@ -54,6 +54,8 @@ void FaceController::setListening(bool listening) {
 }
 
 void FaceController::update() {
+    std::cout<<"FaceController::update"<<std::endl;
+
     std::lock_guard<std::mutex> lock(configMutex);
 
     // interpolate configurations if needed
