@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <mutex>
+#include <iostream>
 
 
 class FaceRenderer {

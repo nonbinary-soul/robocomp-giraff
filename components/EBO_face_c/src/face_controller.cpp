@@ -70,19 +70,20 @@ void FaceController::update() {
     // updating face rendering
     renderer.setFaceConfig(currentConfig);
 
-    // Add logic for pupil movement
+    // pupil movement
     if (pupilActive) {
         renderer.renderPupil(pupilPosition, 10.0f); // Render the pupil at the new position
     }
 
-    // Add talking animation
+    // talking animation
     if (isTalking) {
         // Example: animate the mouth based on some predefined logic
         // Modify `currentConfig` for the mouth dynamically
     }
 
+    // listening animation
     if (isListening) {
-        // Logic for animating listening states
+        // Logic
     }
 }
 

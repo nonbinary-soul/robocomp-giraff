@@ -96,54 +96,82 @@ void SpecificWorker::emergency()
 }
 
 void SpecificWorker::compute() {
-	std::cout << "Compute worker" << std::endl;
+    std::cout << "SpecificWorker::compute" << std::endl;
 
-	try {
-		if (!window.isOpen()) {
-			window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
-			window.setFramerateLimit(60);
-		}
+    try {
+        if (!window.isOpen()) {
+            window.create(sf::VideoMode(Globals::res_x, Globals::res_y), "Reopened Window");
+        	window.setFramerateLimit(60);
+        }
 
-		static sf::Clock emotionTimer;
-		static sf::Clock fpsClock;
-		static int frameCount = 0;
-		static bool toggle = true;
+        static sf::Clock fpsClock;
+        static int frameCount = 0;
 
-		while (window.isOpen()) {
-			sf::Event event{};
-			while (window.pollEvent(event)) {
-				if (event.type == sf::Event::Closed) {
-					window.close();
-				}
-			}
+        // Primera emoción: joy
+        std::cout << "Expressing joy..." << std::endl;
+        EmotionalMotor_expressJoy();
+        faceRenderer.renderFace();
+        window.display();
+        frameCount++;
 
-			// Switch emotions
-			if (emotionTimer.getElapsedTime().asSeconds() > 3.0f) {
-				if (toggle) {
-					std::cout << "expressing joy..." << std::endl;
-					EmotionalMotor_expressJoy();
-				} else {
-					std::cout << "expressing disgust..." << std::endl;
-					EmotionalMotor_expressDisgust();
-				}
-				toggle = !toggle;
-				emotionTimer.restart();
-			}
+        // Contar FPS durante la espera
+        sf::Clock waitClock;
+        while (waitClock.getElapsedTime().asSeconds() < 3.0f) {
+            sf::Event event{};
+            while (window.pollEvent(event)) {
+                if (event.type == sf::Event::Closed) {
+                    window.close();
+                    return;
+                }
+            }
 
-			// Render the face
-			faceRenderer.renderFace();
-			window.display();
+            // Incrementar frameCount y actualizar ventana
+            frameCount++;
+            window.display();
 
-			frameCount++;
-			if (fpsClock.getElapsedTime().asSeconds() >= 1.0f) {
-				std::cout << "FPS: " << frameCount << std::endl;
-				frameCount = 0;
-				fpsClock.restart();
-			}
-		}
-	} catch (const std::exception &e) {
-		std::cerr << "Exception caught in compute: " << e.what() << std::endl;
-	}
+            // Calcular FPS
+            if (fpsClock.getElapsedTime().asSeconds() >= 1.0f) {
+                std::cout << "FPS - joy: " << frameCount << std::endl;
+                frameCount = 0;
+                fpsClock.restart();
+            }
+        }
+
+        // Segunda emoción: disgust
+        std::cout << "Expressing disgust..." << std::endl;
+        EmotionalMotor_expressDisgust();
+        faceRenderer.renderFace();
+        window.display();
+        frameCount++;
+
+        // Contar FPS durante la segunda espera
+        waitClock.restart();
+        while (waitClock.getElapsedTime().asSeconds() < 3.0f) {
+            sf::Event event{};
+            while (window.pollEvent(event)) {
+                if (event.type == sf::Event::Closed) {
+                    window.close();
+                    return;
+                }
+            }
+
+            // Incrementar frameCount y actualizar ventana
+            frameCount++;
+            window.display();
+
+            // Calcular FPS
+            if (fpsClock.getElapsedTime().asSeconds() >= 1.0f) {
+                std::cout << "FPS - disgust: " << frameCount << std::endl;
+                frameCount = 0;
+                fpsClock.restart();
+            }
+        }
+
+        std::cout << "waiting 3 seconds before finish..." << std::endl;
+
+    } catch (const std::exception &e) {
+        std::cerr << "Exception caught in compute: " << e.what() << std::endl;
+    }
 }
 
 //Execute one when exiting to emergencyState

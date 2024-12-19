@@ -32,6 +32,8 @@ std::vector<sf::Vector2f> FaceRenderer::calculateBezierCurve(const std::vector<s
 }
 
 void FaceRenderer::renderFace() {
+    std::cout<<"FaceRenderer::renderFace"<<std::endl;
+
     std::lock_guard<std::mutex> lock(face_config_mutex);
 
     window.clear(background_color);
